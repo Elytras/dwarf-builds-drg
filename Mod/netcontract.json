@@ -1,0 +1,18 @@
+{
+ "classes": {
+  "/Game/_DwarfBuilds/Net/DB_PerkShare_v1.DB_PerkShare_v1_C": {
+   "components": {},
+   "properties": {
+    "Classes": "Array<Object</Script/FSD.PlayerCharacterID>>",
+    "Counts": "Array<Int>",
+    "Ids": "Array<Int>",
+    "Perks": "Array<Object</Script/FSD.PerkAsset>>",
+    "Ranks": "Array<Int>"
+   },
+   "replicates": true,
+   "rpcs": {},
+   "super": "/Script/Engine.Actor"
+  }
+ },
+ "structs": {}
+}

@@ -1,0 +1,10 @@
+﻿# Dwarf Builds as AssetGen C++: `python <AssetGen>/tools/bpbuild.py Mod <SDK>/experimental/UeApi <assetgen>` (README "Building
+# from source"). Paths are relative to this folder; the SDK (DRG-Blueprint-Cpp-SDK) is cloned beside this repo.
+mods:
+  - name: DwarfBuilds
+    sources: [DwarfBuilds/DwarfBuilds.cpp]
+    # The logo texture, cooked once by the UE editor for 0.1.0; AssetGen does not write textures.
+    bundle: [Bundle]
+    # The replicated surface of Dwarf Builds 0.1.0 (DB_PerkShare_v1). A build that changes or drops any of it is not
+    # packed, so a lobby can mix this build and the mod.io 0.1.0.
+    net_contract: netcontract.json

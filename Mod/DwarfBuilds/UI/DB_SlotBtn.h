@@ -1,0 +1,106 @@
+﻿// Decompiled from /Game/_DwarfBuilds/UI/DB_SlotBtn by AssetGen/tools/bpdecomp.py; edit freely, it is source now.
+#pragma once
+#include "../DwarfBuilds.h"
+namespace UI {
+class DB_SlotBtn : public UUserWidget {
+public:
+    UE_WIDGET(USizeBox, Box);
+    UE_WIDGET(UOverlay, BtnLayers);
+    UE_WIDGET(UBorder, Outer);
+    UE_WIDGET(UBorder, Ring);
+    UE_WIDGET(UBorder, Fill);
+    UE_WIDGET(UTextBlock, LabelText);
+    UE_WIDGET(UButton, Btn);
+    DB_TakeDialog* Dialog;
+    int32 Index;
+    DB_SlotBtn() {
+        Box->WidthOverride = 48.0f;
+        Box->HeightOverride = 48.0f;
+        Box->bOverride_WidthOverride = true;
+        Box->bOverride_HeightOverride = true;
+        Box->AddChild(BtnLayers);
+        UOverlaySlot *Outer_Slot = Cast<UOverlaySlot>(BtnLayers->AddChild(Outer));
+        Outer_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Fill;
+        Outer_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Fill;
+        Outer->Padding.Left = 1.0f;
+        Outer->Padding.Top = 1.0f;
+        Outer->Padding.Right = 1.0f;
+        Outer->Padding.Bottom = 1.0f;
+        Outer->BrushColor = FLinearColor(0.34f, 0.11f, 0.0f, 1.0f);
+        UBorderSlot *Ring_Slot = Cast<UBorderSlot>(Outer->AddChild(Ring));
+        Ring_Slot->Padding.Left = 1.0f;
+        Ring_Slot->Padding.Top = 1.0f;
+        Ring_Slot->Padding.Right = 1.0f;
+        Ring_Slot->Padding.Bottom = 1.0f;
+        Ring->Padding.Left = 1.0f;
+        Ring->Padding.Top = 1.0f;
+        Ring->Padding.Right = 1.0f;
+        Ring->Padding.Bottom = 1.0f;
+        Ring->BrushColor = FLinearColor(0.012f, 0.008f, 0.005f, 1.0f);
+        UBorderSlot *Fill_Slot = Cast<UBorderSlot>(Ring->AddChild(Fill));
+        Fill_Slot->Padding.Left = 1.0f;
+        Fill_Slot->Padding.Top = 1.0f;
+        Fill_Slot->Padding.Right = 1.0f;
+        Fill_Slot->Padding.Bottom = 1.0f;
+        Fill->HorizontalAlignment = EHorizontalAlignment::HAlign_Center;
+        Fill->VerticalAlignment = EVerticalAlignment::VAlign_Center;
+        Fill->Padding.Left = 0.0f;
+        Fill->Padding.Top = 4.0f;
+        Fill->Padding.Right = 0.0f;
+        Fill->Padding.Bottom = 0.0f;
+        Fill->BrushColor = FLinearColor(0.012f, 0.008f, 0.005f, 1.0f);
+        UBorderSlot *LabelText_Slot = Cast<UBorderSlot>(Fill->AddChild(LabelText));
+        LabelText_Slot->Padding.Left = 0.0f;
+        LabelText_Slot->Padding.Top = 4.0f;
+        LabelText_Slot->Padding.Right = 0.0f;
+        LabelText_Slot->Padding.Bottom = 0.0f;
+        LabelText_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Center;
+        LabelText_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
+        LabelText->Text = "A";
+        LabelText->ColorAndOpacity.SpecifiedColor = FLinearColor(0.90466f, 0.83077f, 0.63076f, 1.0f);
+        LabelText->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
+        LabelText->Font.TypefaceFontName = "Rift Soft Bold";
+        LabelText->Font.Size = 26;
+        LabelText->Justification = ETextJustify::Center;
+        UOverlaySlot *Btn_Slot = Cast<UOverlaySlot>(BtnLayers->AddChild(Btn));
+        Btn_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Fill;
+        Btn_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Fill;
+        Btn->WidgetStyle.Normal.Margin.Left = 0.0f;
+        Btn->WidgetStyle.Normal.Margin.Top = 0.0f;
+        Btn->WidgetStyle.Normal.Margin.Right = 0.0f;
+        Btn->WidgetStyle.Normal.Margin.Bottom = 0.0f;
+        Btn->WidgetStyle.Normal.TintColor.SpecifiedColor = FLinearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        Btn->WidgetStyle.Normal.ResourceName = FName();
+        Btn->WidgetStyle.Normal.DrawAs = ESlateBrushDrawType::Image;
+        Btn->WidgetStyle.Hovered.Margin.Left = 0.0f;
+        Btn->WidgetStyle.Hovered.Margin.Top = 0.0f;
+        Btn->WidgetStyle.Hovered.Margin.Right = 0.0f;
+        Btn->WidgetStyle.Hovered.Margin.Bottom = 0.0f;
+        Btn->WidgetStyle.Hovered.TintColor.SpecifiedColor = FLinearColor(1.0f, 1.0f, 1.0f, 0.07f);
+        Btn->WidgetStyle.Hovered.ResourceName = FName();
+        Btn->WidgetStyle.Hovered.DrawAs = ESlateBrushDrawType::Image;
+        Btn->WidgetStyle.Pressed.Margin.Left = 0.0f;
+        Btn->WidgetStyle.Pressed.Margin.Top = 0.0f;
+        Btn->WidgetStyle.Pressed.Margin.Right = 0.0f;
+        Btn->WidgetStyle.Pressed.Margin.Bottom = 0.0f;
+        Btn->WidgetStyle.Pressed.TintColor.SpecifiedColor = FLinearColor(1.0f, 1.0f, 1.0f, 0.14f);
+        Btn->WidgetStyle.Pressed.ResourceName = FName();
+        Btn->WidgetStyle.Pressed.DrawAs = ESlateBrushDrawType::Image;
+        Btn->WidgetStyle.Disabled.ImageSize = FVector2D(32.0f, 32.0f);
+        Btn->WidgetStyle.Disabled.TintColor.SpecifiedColor = FLinearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        Btn->WidgetStyle.Disabled.DrawAs = ESlateBrushDrawType::Image;
+        Btn->WidgetStyle.NormalPadding.Left = 0.0f;
+        Btn->WidgetStyle.NormalPadding.Top = 0.0f;
+        Btn->WidgetStyle.NormalPadding.Right = 0.0f;
+        Btn->WidgetStyle.NormalPadding.Bottom = 0.0f;
+        Btn->WidgetStyle.PressedPadding.Left = 0.0f;
+        Btn->WidgetStyle.PressedPadding.Top = 0.0f;
+        Btn->WidgetStyle.PressedPadding.Right = 0.0f;
+        Btn->WidgetStyle.PressedPadding.Bottom = 0.0f;
+        Btn->IsFocusable = false;
+        Btn->OnClicked.Add(this, &DB_SlotBtn::BndEvt__DB_SlotBtn_Btn_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature);
+    }
+    void BndEvt__DB_SlotBtn_Btn_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature();
+    void Set(FString Label, bool Selected, bool Current);
+};
+}   // namespace UI

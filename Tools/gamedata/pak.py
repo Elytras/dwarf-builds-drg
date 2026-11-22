@@ -29,13 +29,18 @@ APP_ID = "548430"
 
 
 def unrealpak_exe():
-    """UnrealPak.exe of the engine named in LocalConfig.ini (the path is never printed)."""
-    if TOOLS not in sys.path:
-        sys.path.insert(0, TOOLS)
-    from pack_mod import engine_dir
-    exe = os.path.join(engine_dir(), "Engine", "Binaries", "Win64", "UnrealPak.exe")
+    """UnrealPak.exe: the UNREALPAK environment variable, else the engine named in the FSD-Template's
+    LocalConfig.ini (the path is never printed)."""
+    exe = os.environ.get("UNREALPAK", "")
+    ini = os.path.join(ROOT, "DRGModdingAutomationScripts", "Configs", "LocalConfig.ini")
+    if not exe and os.path.isfile(ini):
+        with open(ini, encoding="utf-8") as lines:
+            for line in lines:
+                key, _, value = line.strip().partition("=")
+                if key == "UnrealEngineLocation":
+                    exe = os.path.join(value.strip().strip('"'), "Engine", "Binaries", "Win64", "UnrealPak.exe")
     if not os.path.isfile(exe):
-        sys.exit("UnrealPak.exe not found under the engine folder from LocalConfig.ini")
+        sys.exit("UnrealPak.exe not found: set UNREALPAK, or UnrealEngineLocation in LocalConfig.ini")
     return exe
 
 

@@ -1,0 +1,123 @@
+﻿// Decompiled from /Game/_DwarfBuilds/UI/DB_Select by AssetGen/tools/bpdecomp.py; edit freely, it is source now.
+#pragma once
+#include "../DwarfBuilds.h"
+namespace UI {
+class DB_Select : public UUserWidget {
+public:
+    UE_WIDGET(UCanvasPanel, Root);
+    UE_WIDGET(UScaleBox, TeamFit);
+    UE_WIDGET(UHorizontalBox, TeamRow);
+    UE_WIDGET(DB_Column, Team0);
+    UE_WIDGET(DB_Column, Team1);
+    UE_WIDGET(DB_Column, Team2);
+    UE_WIDGET(UScaleBox, OwnFit);
+    UE_WIDGET(DB_Column, Own);
+    UE_WIDGET(UHorizontalBox, TeamHead);
+    UE_WIDGET(UTextBlock, HeadText);
+    UE_WIDGET(UVerticalBox, MoreBox);
+    UE_WIDGET(UImage, MoreRule);
+    UE_WIDGET(UBorder, MoreFill);
+    UE_WIDGET(UTextBlock, MoreText);
+    DB_Data* Data;
+    UUserWidget* Screen;
+    UCanvasPanel* Canvas;
+    TArray<AFSDPlayerState*> Mates;
+    TArray<DB_Column*> TeamCols;
+    bool Inited;
+    bool UpTmp;
+    bool BecTmp;
+    bool WasUp;
+    float LastTick;     // when Tick last ran (real time)
+    float NextUpdate;   // when Tick runs Update next
+    UWidget* Desc;
+    UPlayerCharacterID* OwnClass;
+    int32 OwnLoadout = -1;
+    float ViewW;
+    float ViewH;
+    int32 TeamCount;
+    TSubclassOf<UUserWidget> DescClass;
+    DB_Select() {
+        UCanvasPanelSlot *TeamFit_Slot = Cast<UCanvasPanelSlot>(Root->AddChild(TeamFit));
+        TeamFit_Slot->LayoutData.Offsets.Left = 24.0f;
+        TeamFit_Slot->LayoutData.Offsets.Top = 292.0f;
+        TeamFit_Slot->LayoutData.Offsets.Right = 0.0f;
+        TeamFit_Slot->LayoutData.Offsets.Bottom = 0.0f;
+        TeamFit_Slot->bAutoSize = true;
+        TeamFit->Stretch = EStretch::UserSpecified;
+        TeamFit->UserSpecifiedScale = 0.5f;
+        TeamFit->AddChild(TeamRow);
+        UHorizontalBoxSlot *Team0_Slot = Cast<UHorizontalBoxSlot>(TeamRow->AddChild(Team0));
+        Team0_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Top;
+        Team0->Visibility = ESlateVisibility::Visible;
+        UHorizontalBoxSlot *Team1_Slot = Cast<UHorizontalBoxSlot>(TeamRow->AddChild(Team1));
+        Team1_Slot->Padding.Left = 8.0f;
+        Team1_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Top;
+        Team1->Visibility = ESlateVisibility::Visible;
+        UHorizontalBoxSlot *Team2_Slot = Cast<UHorizontalBoxSlot>(TeamRow->AddChild(Team2));
+        Team2_Slot->Padding.Left = 8.0f;
+        Team2_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Top;
+        Team2->Visibility = ESlateVisibility::Visible;
+        UCanvasPanelSlot *OwnFit_Slot = Cast<UCanvasPanelSlot>(Root->AddChild(OwnFit));
+        OwnFit_Slot->LayoutData.Offsets.Left = -296.0f;
+        OwnFit_Slot->LayoutData.Offsets.Top = 166.0f;
+        OwnFit_Slot->LayoutData.Offsets.Right = 0.0f;
+        OwnFit_Slot->LayoutData.Offsets.Bottom = 0.0f;
+        OwnFit_Slot->LayoutData.Anchors.Minimum = FVector2D(1.0f, 0.0f);
+        OwnFit_Slot->LayoutData.Anchors.Maximum = FVector2D(1.0f, 0.0f);
+        OwnFit_Slot->LayoutData.Alignment = FVector2D(0.5f, 0.0f);
+        OwnFit_Slot->bAutoSize = true;
+        OwnFit->Stretch = EStretch::UserSpecified;
+        OwnFit->UserSpecifiedScale = 0.5f;
+        OwnFit->AddChild(Own);
+        Own->Visibility = ESlateVisibility::Visible;
+        UCanvasPanelSlot *TeamHead_Slot = Cast<UCanvasPanelSlot>(Root->AddChild(TeamHead));
+        TeamHead_Slot->LayoutData.Offsets.Left = 24.0f;
+        TeamHead_Slot->LayoutData.Offsets.Top = 286.0f;
+        TeamHead_Slot->LayoutData.Offsets.Right = 0.0f;
+        TeamHead_Slot->LayoutData.Offsets.Bottom = 0.0f;
+        TeamHead_Slot->LayoutData.Alignment = FVector2D(0.0f, 1.0f);
+        TeamHead_Slot->bAutoSize = true;
+        TeamHead->Visibility = ESlateVisibility::Collapsed;
+        UHorizontalBoxSlot *HeadText_Slot = Cast<UHorizontalBoxSlot>(TeamHead->AddChild(HeadText));
+        HeadText_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
+        HeadText->Text = "DWARF BUILDS";
+        HeadText->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
+        HeadText->Font.TypefaceFontName = "Rift Soft Bold";
+        HeadText->Font.Size = 22;
+        HeadText->ShadowOffset = FVector2D(2.0f, 2.0f);
+        HeadText->ShadowColorAndOpacity = FLinearColor(0.0f, 0.0f, 0.0f, 0.6f);
+        UHorizontalBoxSlot *MoreBox_Slot = Cast<UHorizontalBoxSlot>(TeamHead->AddChild(MoreBox));
+        MoreBox_Slot->Padding.Left = 12.0f;
+        MoreBox_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
+        MoreBox->Visibility = ESlateVisibility::Collapsed;
+        MoreBox->AddChild(MoreRule);
+        MoreRule->Brush.ImageSize = FVector2D(32.0f, 2.0f);
+        MoreRule->ColorAndOpacity = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
+        MoreBox->AddChild(MoreFill);
+        MoreFill->Padding.Left = 8.0f;
+        MoreFill->Padding.Top = 3.0f;
+        MoreFill->Padding.Right = 8.0f;
+        MoreFill->BrushColor = FLinearColor(0.0f, 0.0f, 0.0f, 0.6f);
+        UBorderSlot *MoreText_Slot = Cast<UBorderSlot>(MoreFill->AddChild(MoreText));
+        MoreText_Slot->Padding.Left = 8.0f;
+        MoreText_Slot->Padding.Top = 3.0f;
+        MoreText_Slot->Padding.Right = 8.0f;
+        MoreText->Text = "+1 MORE";
+        MoreText->ColorAndOpacity.SpecifiedColor = FLinearColor(0.90466f, 0.83077f, 0.63076f, 1.0f);
+        MoreText->Font.FontObject = &Assets::Art::Fonts::Carbon;
+        MoreText->Font.TypefaceFontName = "2. Bold";
+        MoreText->Font.Size = 14;
+    }
+    void Tick(FGeometry MyGeometry, float InDeltaTime);
+    void AttachTo(UUserWidget* NewScreen, UCanvasPanel* NewCanvas, DB_Data* NewData, int32 Layer);
+    void IsAttached(bool& Up);
+    void Update(bool& Up, bool& Became);
+    void Detach();
+    void OnStop();
+    void Refresh();
+    void FitScale(int32 Count);
+    void FindDesc();
+    void HideDesc();
+    FEventReply OnPreviewMouseButtonDown(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
+};
+}   // namespace UI
