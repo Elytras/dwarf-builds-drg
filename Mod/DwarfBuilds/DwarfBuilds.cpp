@@ -6,6 +6,7 @@ UE_MOD_PACKAGE("/Game/_DwarfBuilds");
 #include "DB_Data.cpp"
 #include "DB_Hub.cpp"
 #include "DB_Mod.cpp"
+#include "Net/DB_BuildShare_v2.cpp"
 #include "Net/DB_PerkShare_v1.cpp"
 #include "UI/DB_Chip.cpp"
 #include "UI/DB_Column.cpp"

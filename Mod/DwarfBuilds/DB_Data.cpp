@@ -79,6 +79,7 @@ void DB_Data::ReceiveBeginPlay() {
     FSoftObjectPath CallFunc_MakeSoftObjectPath_ReturnValue_3;
     FSoftObjectPath CallFunc_MakeSoftObjectPath_ReturnValue_4;
     LoadSettings();
+    UKismetSystemLibrary::K2_SetTimer(this, "ShareTick", 2.0f, true, 0.0f, 0.0f);
     CallFunc_MakeSoftObjectPath_ReturnValue = UKismetSystemLibrary::MakeSoftObjectPath("/Game/UI/Menu_Loadout/Assets/Upgrade_BG.Upgrade_BG");
     CallFunc_Conv_SoftObjPathToSoftObjRef_ReturnValue = UKismetSystemLibrary::Conv_SoftObjPathToSoftObjRef(CallFunc_MakeSoftObjectPath_ReturnValue);
     UKismetSystemLibrary::LoadAsset(this, CallFunc_Conv_SoftObjPathToSoftObjRef_ReturnValue, {this, &DB_Data::OnHexBgLoaded});
@@ -124,6 +125,11 @@ void DB_Data::CodeOf(AFSDPlayerState* Player, FString& Code) {
     FString CallFunc_RemoteCode_Code;
     FString CallFunc_SaveCode_Code;
     CodeOf_Code = "";
+    DB_BuildShare_v2* Link = LinkFor(Player);
+    if (Link != nullptr) {
+        Code = Link->Code;
+        return;
+    }
     CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Player);
     if (CallFunc_IsValid_ReturnValue) {
         CodeOf_Class = Player->GetSelectedCharacterID();
@@ -309,6 +315,18 @@ void DB_Data::PerksOf(AFSDPlayerState* Player, TArray<UPerkAsset*>& Perks, TArra
                     }
                 }
             } else {
+                // Another player: their link when there is one (DB_BuildShare_v2), else what the host sees or the
+                // host's 0.1.0 perk table says.
+                PerksOf_Link = LinkFor(Player);
+                if (PerksOf_Link != nullptr) {
+                    if (PerksOf_Link->PerksKnown) {
+                        bool LinkFound;
+                        PerksOfCode(PerksOf_Link->Code, PerksOf_Perks, PerksOf_Ranks, LinkFound);
+                    } else {
+                        PerksOf_State = 3;
+                    }
+                    goto L_03DE;
+                }
                 CallFunc_IsServer_ReturnValue = UKismetSystemLibrary::IsServer(this);
                 if (CallFunc_IsServer_ReturnValue) {
                     CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Player->SaveGameStateComponent);
@@ -361,6 +379,12 @@ void DB_Data::PerksOf(AFSDPlayerState* Player, TArray<UPerkAsset*>& Perks, TArra
                         goto L_03DE;
                     }
                 }
+            }
+            // The game sends a player's perks to the host only at times, and to clients never: none known for
+            // another player means unknown, not "no perks".
+            if (!CallFunc_EqualEqual_ObjectObject_ReturnValue && PerksOf_Perks.Num() == 0) {
+                PerksOf_State = 3;
+                goto L_03DE;
             }
             SortPerks();
         }
@@ -2451,3 +2475,85 @@ void DB_Data::LoadSettings() {
     }
 }
 
+// Another player's link, when it is the best source of their build: on a client any link the host has filled, on the
+// host only one the player's own mod sent (otherwise the host reads the player itself, as 0.1.0 did).
+DB_BuildShare_v2* DB_Data::LinkFor(AFSDPlayerState* Player) {
+    AFSDPlayerState* Local;
+    LocalPS(Local);
+    if (!UKismetSystemLibrary::IsValid(Player) || Player == Local) return nullptr;
+    bool Server = UKismetSystemLibrary::IsServer(this);
+    for (DB_BuildShare_v2* Link : Links) {
+        if (UKismetSystemLibrary::IsValid(Link) && Link->Player == Player && UKismetStringLibrary::Len(Link->Code) > 0 &&
+            (!Server || Link->FromPlayer))
+            return Link;
+    }
+    return nullptr;
+}
+
+// Every 2 s on every machine. First the world's links again. A client then sends its own build through its link once
+// that has reached it, and again whenever the build changes. The host keeps one link per player, owned by the
+// player's controller so the player can send through it, and fills in what it sees itself for a player who sent
+// nothing (no mod, or 0.1.0): the build from the replicated selections, the perks when the game gave them to the host.
+void DB_Data::ShareTick() {
+    TArray<AActor*> Found;
+    UGameplayStatics::GetAllActorsOfClass(this, DB_BuildShare_v2::StaticClass(), Found);
+    Links.Clear();
+    for (AActor* Actor : Found) Links.Add((DB_BuildShare_v2*)Actor);
+    AFSDPlayerState* Local;
+    LocalPS(Local);
+    FString Own;
+    if (!UKismetSystemLibrary::IsServer(this)) {
+        if (!UKismetSystemLibrary::IsValid(Local)) return;
+        APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+        for (DB_BuildShare_v2* Link : Links) {
+            if (UKismetSystemLibrary::IsValid(Link) && Link->Player == Local && Link->GetOwner() == PC) {
+                LocalCode(Own);
+                if (UKismetStringLibrary::Len(Own) > 0 && (Own != SentCode || Link->Code != Own)) {
+                    Link->Server_SetCode(Own);
+                    SentCode = Own;
+                }
+            }
+        }
+        return;
+    }
+    AGameStateBase* State = UGameplayStatics::GetGameState(this);
+    if (!UKismetSystemLibrary::IsValid(State)) return;
+    FTransform Origin = UKismetMathLibrary::MakeTransform(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f),
+                                                          FVector(1.0f, 1.0f, 1.0f));
+    TArray<APlayerState*> Players = State->PlayerArray;
+    for (APlayerState* Each : Players) {
+        AFSDPlayerState* PS = Cast<AFSDPlayerState>(Each);
+        if (PS == nullptr) continue;
+        DB_BuildShare_v2* Link = nullptr;
+        for (DB_BuildShare_v2* Other : Links) {
+            if (UKismetSystemLibrary::IsValid(Other) && Other->Player == PS) Link = Other;
+        }
+        AActor* Controller = PS->GetOwner();
+        if (Link == nullptr) {
+            Link = (DB_BuildShare_v2*)UGameplayStatics::BeginDeferredActorSpawnFromClass(
+                this, DB_BuildShare_v2::StaticClass(), Origin, ESpawnActorCollisionHandlingMethod::AlwaysSpawn, Controller);
+            Link->Player = PS;
+            UGameplayStatics::FinishSpawningActor(Link, Origin);
+            Links.Add(Link);
+        } else if (UKismetSystemLibrary::IsValid(Controller) && Link->GetOwner() != Controller) {
+            Link->SetOwner(Controller);
+        }
+        if (PS == Local) {
+            LocalCode(Own);
+            if (Link->Code != Own) Link->Code = Own;
+            Link->PerksKnown = true;
+            Link->FromPlayer = true;
+        } else if (!Link->FromPlayer) {
+            TArray<UPerkAsset*> Perks;
+            TArray<int32> Ranks;
+            int32 PerkState;
+            CodeOf(PS, Own);
+            PerksOf(PS, Perks, Ranks, PerkState);
+            if (Link->Code != Own) Link->Code = Own;
+            Link->PerksKnown = PerkState == 0;
+        }
+    }
+    for (DB_BuildShare_v2* Link : Links) {
+        if (UKismetSystemLibrary::IsValid(Link) && !UKismetSystemLibrary::IsValid(Link->Player)) Link->K2_DestroyActor();
+    }
+}

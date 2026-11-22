@@ -113,6 +113,11 @@ public:
     TArray<UPerkAsset*> PerksOf_Own;
     TArray<FSaveGameStatePerkItem> PerksOf_Items;
     DB_PerkShare_v1* PerksOf_Share;
+    DB_BuildShare_v2* PerksOf_Link;
+    // Every player's DB_BuildShare_v2 in this world, found again by each ShareTick; and the code this client last
+    // sent its own.
+    TArray<DB_BuildShare_v2*> Links;
+    FString SentCode;
     TArray<UPerkAsset*> SortPerks_Perks;
     TArray<int32> SortPerks_Ranks;
     FText ItemTexts_Name;
@@ -231,6 +236,8 @@ public:
     void SlotInfo(UPlayerCharacterID* Class, int32& Count, int32& Current);
     void ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applied, int32& Skipped, FString& Message);
     void LocalPS(AFSDPlayerState*& PS);
+    void ShareTick();
+    DB_BuildShare_v2* LinkFor(AFSDPlayerState* Player);
     void ClassLetter(UPlayerCharacterID* Class, FString& Letter, FString& Name);
     void SlotItems(UPlayerCharacterID* Class, int32 Slot, TArray<UItemID*>& Items, TArray<FGuid>& Ids);
     void GearOf(UItemID* Item, UUpgradableGearComponent*& Gear);

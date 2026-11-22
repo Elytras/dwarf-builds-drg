@@ -1,5 +1,30 @@
 {
  "classes": {
+  "/Game/_DwarfBuilds/Net/DB_BuildShare_v2.DB_BuildShare_v2_C": {
+   "components": {},
+   "properties": {
+    "Code": "Str",
+    "FromPlayer": "Bool",
+    "PerksKnown": "Bool",
+    "Player": "Object</Script/FSD.FSDPlayerState>"
+   },
+   "replicates": true,
+   "rpcs": {
+    "Server_SetCode": {
+     "flags": [
+      "Reliable",
+      "Server"
+     ],
+     "params": [
+      [
+       "NewCode",
+       "Str"
+      ]
+     ]
+    }
+   },
+   "super": "/Script/Engine.Actor"
+  },
   "/Game/_DwarfBuilds/Net/DB_PerkShare_v1.DB_PerkShare_v1_C": {
    "components": {},
    "properties": {

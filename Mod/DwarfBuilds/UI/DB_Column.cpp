@@ -81,6 +81,11 @@ bool DB_Column::SameAsLast(AFSDPlayerState* Player) {
         FpSharePerks = Share->Perks;
         FpShareRanks = Share->Ranks;
     }
+    // The player's link (DB_BuildShare_v2): its code and whether its perks count.
+    DB_BuildShare_v2* Link = Data->LinkFor(Player);
+    FString LinkSig = Link != nullptr ? Link->Code + (Link->PerksKnown ? "+" : "-") : FString("");
+    Same = Same && LinkSig == FpLink;
+    FpLink = LinkSig;
     if (!Same) {
         FpPlayer = Player;
         FpClass = Class;
@@ -161,7 +166,9 @@ void DB_Column::ShowPlayer(AFSDPlayerState* Player) {
                     if (CallFunc_EqualEqual_IntInt_ReturnValue_1) {
                         ShowPerks();
                     } else {
-                        ShowNote(UKismetMathLibrary::SelectString("Not available. The host does not run this mod.", "Waiting for the host...", UKismetMathLibrary::EqualEqual_IntInt(CallFunc_PerksOf_State, 1)));
+                        ShowNote(CallFunc_PerksOf_State == 1 ? FString("Not available. The host does not run this mod.") :
+                                 CallFunc_PerksOf_State == 3 ? FString("Not available. The game does not share this player's perks.") :
+                                 FString("Waiting for the host..."));
                     }
                     Temp_byte_Variable_2 = ESlateVisibility::SelfHitTestInvisible;
                     Temp_byte_Variable_3 = ESlateVisibility::Collapsed;

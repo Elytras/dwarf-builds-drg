@@ -5,6 +5,6 @@ mods:
     sources: [DwarfBuilds/DwarfBuilds.cpp]
     # The logo texture, cooked once by the UE editor for 0.1.0; AssetGen does not write textures.
     bundle: [Bundle]
-    # The replicated surface of Dwarf Builds 0.1.0 (DB_PerkShare_v1). A build that changes or drops any of it is not
-    # packed, so a lobby can mix this build and the mod.io 0.1.0.
+    # The replicated surface: DB_PerkShare_v1 as 0.1.0 shipped it, and DB_BuildShare_v2. A build that changes or drops
+    # any of it is not packed, so a lobby can mix this build and the mod.io 0.1.0.
     net_contract: netcontract.json

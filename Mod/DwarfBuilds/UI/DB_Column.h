@@ -91,6 +91,7 @@ public:
     FString FpName;
     int32 FpLevel;
     int32 FpLoadout;
+    FString FpLink;
     bool FpHost;
     bool FpHex;
     float FpAt;

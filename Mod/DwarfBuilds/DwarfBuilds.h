@@ -17,6 +17,7 @@ class InitCave;
 class InitSpacerig;
 namespace Net {
 class DB_PerkShare_v1;
+class DB_BuildShare_v2;
 }   // namespace Net
 namespace UI {
 class DB_Tip;
@@ -43,6 +44,7 @@ using namespace UI;
 
 #include "DB_Settings.h"
 #include "Net/DB_PerkShare_v1.h"
+#include "Net/DB_BuildShare_v2.h"
 #include "UI/DB_Tip.h"
 #include "DB_Data.h"
 #include "UI/DB_HubPage.h"
