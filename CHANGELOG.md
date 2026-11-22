@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Built from C++ with AssetGen instead of the BPForge editor spec; no Unreal editor needed (README, NOTES.md).
+  Network-compatible with 0.1.0.
+- The team window and the class selection overlay redraw only what changed, and the class selection screen is
+  no longer polled for the whole level.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

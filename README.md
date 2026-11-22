@@ -61,34 +61,31 @@ Copy a code on the website, then press PASTE FROM CLIPBOARD on the BUILD CODE ta
 
 ## Building from source
 
-You need Unreal Engine 4.27, Python 3.11 or newer, Deep Rock Galactic installed and a project made from
-[FSD-Template](https://github.com/DRG-Modding/FSD-Template).
+The mod is C++ compiled to cooked Blueprints by [AssetGen](https://github.com/Elytras/CPP-to-blueprint-compiler)
+(the sources are in `Mod/DwarfBuilds`, see [NOTES.md](NOTES.md)). No Unreal editor or project is needed. You need:
 
-1. Clone with the website: `git clone --recurse-submodules https://github.com/byrodi/dwarf-builds-drg.git`.
-   Copy `Tools`, `Plugins/BPForge` and `Web` into the template project.
-2. Build the BPForge editor plugin (it writes Blueprints from a spec):
-   ```
-   <UE_4.27>\Engine\Build\BatchFiles\Build.bat FSDEditor Win64 Development -Project=<project>\FSD.uproject -Module=BPForge
-   ```
-   A module-only build writes no `UE4Editor.modules` file. If the editor does not load the plugin, copy that file
-   from another plugin's `Binaries/Win64` and change the module name to BPForge.
-3. In the template, run `DRGModdingAutomationScripts\UtilityBats\MakeDefaultConfigFiles.bat` and set the engine
-   and game paths in `Configs\LocalConfig.ini`.
-4. Generate the assets into `Content/_DwarfBuilds` (without `--save` it only compiles them as a check):
-   ```
-   python Tools/dwarfbuilds_build.py --save
-   ```
-5. Cook and pack. The pak lands in `DRGModdingAutomationScripts/Temp/dwarfbuilds.pak`:
-   ```
-   python Tools/pack_mod.py _DwarfBuilds dwarfbuilds
-   ```
-6. Optional, with mint and the game closed: `python Tools/install_mint.py <mint exe> --pak dwarfbuilds`.
+- AssetGen, built as its README says (Windows: `AssetGen.sln`, Release x64; Linux: CMake), with LLVM clang 20 on
+  `PATH` and Python 3 with `pyyaml`.
+- [DRG-Blueprint-Cpp-SDK](https://github.com/Elytras/DRG-Blueprint-Cpp-SDK): the game's API as C++ headers. Use its
+  `experimental/UeApi`; the release `UeApi` lacks `UProficiencyPerkAsset`, which the perk tiles read.
+- `UnrealPak.exe` from Unreal Engine 4.27 (on `PATH` or in `UNREALPAK`) to pack the pak.
 
-The Blueprints live as code in `Tools/dwarfbuilds`; edit them there, not in the editor. Generated assets are not
-in git.
+```
+git clone https://github.com/Elytras/CPP-to-blueprint-compiler.git AssetGen
+git clone https://github.com/Elytras/DRG-Blueprint-Cpp-SDK.git
+git clone <this repository> dwarf-builds-drg
+python AssetGen/tools/bpbuild.py dwarf-builds-drg/Mod DRG-Blueprint-Cpp-SDK/experimental/UeApi AssetGen/x64/Release/assetgen.exe
+```
+
+The pak lands in `Mod/out/DwarfBuilds_P.pak`; add it to [mint](https://github.com/trumank/mint) as a local mod.
+The build refuses to pack when the replicated surface differs from the one 0.1.0 shipped (`Mod/netcontract.json`),
+so a lobby can mix this build and the mod.io release.
+
+The logo texture ships as the one cooked for 0.1.0 (`Mod/Bundle`), since AssetGen does not write textures. Its
+source is `Tools/dwarfbuilds/art`.
 
 The website's game data comes from the installed game: `python Tools/dwarfbuilds_export.py --game <DRG folder>`
-reads the game's pak and writes `Web/public/data` and `Web/public/img`.
+reads the game's pak with UnrealPak (set `UNREALPAK`) and writes `Web/public/data` and `Web/public/img`.
 
 ## Credits
 
