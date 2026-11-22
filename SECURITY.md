@@ -1,0 +1,14 @@
+# Security Policy
+
+## Supported versions
+
+There is no release yet: security fixes go into the `main` branch. After the first release, they go into the latest release only.
+
+## Reporting a vulnerability
+
+Do not open a public issue. Report privately through GitHub:
+https://github.com/byrodi/dwarf-builds-drg/security/advisories/new
+
+Include the affected version or commit, steps to reproduce and the impact you expect. Reports are acknowledged within 14 days. A confirmed vulnerability is fixed in a new release and disclosed through a GitHub Security Advisory, normally within 90 days of the report.
+
+Problems with the website go to [byrodi/dwarf-builds-web](https://github.com/byrodi/dwarf-builds-web/security/advisories/new).

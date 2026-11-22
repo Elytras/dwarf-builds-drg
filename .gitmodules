@@ -1,0 +1,4 @@
+[submodule "Web"]
+	path = Web
+	url = https://github.com/byrodi/dwarf-builds-web.git
+	branch = main

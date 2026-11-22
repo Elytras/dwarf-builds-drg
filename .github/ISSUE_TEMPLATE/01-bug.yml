@@ -1,0 +1,55 @@
+name: Bug report
+description: Something looks wrong or does not work in the game
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search [existing issues](https://github.com/byrodi/dwarf-builds-drg/issues?q=is%3Aissue) first. Security problems go to a [private report](https://github.com/byrodi/dwarf-builds-drg/security/advisories/new), not here. Problems on the website belong to the [website repository](https://github.com/byrodi/dwarf-builds-web/issues).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead. Screenshots help a lot; drag them in here.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Join a lobby with ...
+        2. Press B and open ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Dwarf Builds version
+      description: The release or commit you built from.
+    validations:
+      required: true
+  - type: input
+    id: loader
+    attributes:
+      label: Mod loader
+      description: mint and its version, or the in-game mod.io loader.
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Lobby
+      description: Solo, host or client, the number of players, and whether the host runs Dwarf Builds.
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other mods
+      description: Other enabled mods, at least those that change the UI, loadouts or lobby size.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log
+      description: Relevant lines from FSD/Saved/Logs/FSD.log. It is formatted as code automatically.
+      render: shell
