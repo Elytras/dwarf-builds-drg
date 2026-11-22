@@ -20,7 +20,9 @@ included here as the `Web` submodule.
 - BROWSE opens the build website in the Steam overlay.
 - Client-side: other players do not need the mod.
 
-Other players' perks show when the host runs the mod too; the game does not send them to clients.
+Other players' perks show when the host runs the mod too, since the game does not send them to clients. With this
+build on the host, every player who runs it shares their full build and perks with everyone; players without it
+show what the game sends.
 
 ## Screenshots
 

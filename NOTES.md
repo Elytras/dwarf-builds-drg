@@ -36,10 +36,52 @@ The sources started as AssetGen's `bpdecomp.py` output of the 0.1.0 pak and were
   screen appeared) now stops once the overlay is attached, or 60 s after BeginPlay or the game's selection start.
   The overlay then refreshes itself from its own tick, once a second while shown.
 
+## What other players' builds come from
+
+What a machine can see of another player, checked with three copies of the game on one PC (localmp, 2026-11-22):
+
+- Upgrades and overclocks: each player's `SaveGameStateComponent.ItemUpgradeSelections` replicates to everyone, but
+  it holds only what that player's game last sent the host. The host's own is there from the start; a client's
+  stays empty on the host until the client's game sends its loadout (after class selection), and goes stale when the
+  host changes loadouts without sending one. That stale host entry is the "host's upgrades mostly missing" a client
+  saw on 0.1.0.
+- Perks: `EquippedPerks` does not replicate at all. The host has a client's only when the client's game sends them,
+  which it had not done on the space rig in any test. So a client never sees another player's perks from the game,
+  and 0.1.0's perk table (`DB_PerkShare_v1`) could only pass on the host's own: the empty perk rows of the other
+  clients.
+
+So this build adds `DB_BuildShare_v2`, one actor per player, which the host spawns owned by that player's controller.
+Each player's own copy of the mod sends its full build code (upgrades, overclocks, perks) through its actor
+(`Server_SetCode`), and the host replicates every actor to everyone. For a player without the mod the host fills in
+what it sees itself; perks it does not have show as "Not available. The game does not share this player's perks."
+instead of an empty row. With a host that does not run this build, clients fall back to 0.1.0's sources: the
+replicated selections for builds, the host's perk table for perks, or "not available".
+
+[Build Inspector](https://mod.io/g/drg/m/build-inspector) (AssemblyStorm) was checked for a better source. Its
+assets are in [trumank/drg-mods](https://github.com/trumank/drg-mods) (`Content/_AssemblyStorm/BuildInspector`), MIT
+licensed (Copyright (c) 2022 Truman Kilen). Its `LoadoutData::BuildFromPlayerState` reads the same replicated
+`ItemUpgradeSelections`, first entry per slot, as 0.1.0 does, and shows no perks of other players. Nothing was taken
+from it.
+
 ## Network compatibility
 
-The only replicated class is `DB_PerkShare_v1` (the host's perk table). `Mod/netcontract.json` is its surface as
-0.1.0 shipped it: class path, `Actor` super, and the five arrays `Classes`, `Counts`, `Ids`, `Perks`, `Ranks`.
-AssetGen's `bpbuild.py` refuses to pack a build whose surface differs (`netsurface.py`), so this build and the
-mod.io 0.1.0 can share a lobby. Not tested yet with two machines: a host on one build and a client on the other,
-checking that the client sees the host's perks.
+`Mod/netcontract.json` pins both replicated classes. `DB_PerkShare_v1` is exactly as 0.1.0 shipped it: class path,
+`Actor` super, and the five arrays `Classes`, `Counts`, `Ids`, `Perks`, `Ranks`. `DB_BuildShare_v2` is new: `Player`,
+`Code`, `PerksKnown`, `FromPlayer` and the reliable `Server_SetCode(NewCode)`. AssetGen's `bpbuild.py` refuses to
+pack a build whose surface drops or changes any of it (`netsurface.py`).
+
+A client that lacks a replicated class (0.1.0, or no mod) logs "SerializeNewActor failed to find/spawn actor" and
+tells the server, which stops sending it that actor (UE 4.27 `UActorChannel::ProcessBunch`,
+`NMT_ActorChannelFailure`); the connection stays up.
+
+Checked with localmp (host and two clients on one PC, space rig):
+
+- Host and client A on this build, client B without the mod: A sees the host's and its own builds with perks, and B
+  as far as the host knows B (perks "not available"); the host sees A's build with perks; B stays connected.
+- Host without the mod, client A on this build: A sees the host's build from the replicated selections, perks "not
+  available, the host does not run this mod".
+- Host on this build, a client on 0.1.0: the 0.1.0 client sees the host's perks through `DB_PerkShare_v1` and stays
+  connected; a client on this build sees everyone through `DB_BuildShare_v2`.
+
+Not checked: two real machines over Steam, and a client whose game has sent its loadout after class selection (the
+test copies stayed on the selection screen).

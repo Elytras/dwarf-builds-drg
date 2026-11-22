@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Built from C++ with AssetGen instead of the BPForge editor spec; no Unreal editor needed (README, NOTES.md).
   Network-compatible with 0.1.0.
+- Every player's build and perks reach every client when the host runs this build: each player's mod sends its
+  own build to the host, which shares it with everyone (`DB_BuildShare_v2`, next to 0.1.0's unchanged perk table).
+- Perks the game does not share show as not available instead of an empty row.
 - The team window and the class selection overlay redraw only what changed, and the class selection screen is
   no longer polled for the whole level.
 
