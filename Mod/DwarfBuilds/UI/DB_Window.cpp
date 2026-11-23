@@ -323,11 +323,6 @@ void DB_Window::BndEvt__DB_Window_TabTeamOff_K2Node_ComponentBoundEvent_1_OnButt
     return;
 }
 
-void DB_Window::BndEvt__DB_Window_CloseBtn_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature() {
-    Dismiss();
-    return;
-}
-
 void DB_Window::OnRemovedFromFocusPath(FFocusEvent InFocusEvent) {
     HideAllTips();
     return;
@@ -338,34 +333,9 @@ void DB_Window::OnFocusLost(FFocusEvent InFocusEvent) {
     return;
 }
 
-void DB_Window::OnClosed() {
-    HideAllTips();
-    Stop();
-    Take->SetVisibility(ESlateVisibility::Collapsed);
-    TakeOpen = false;
-    return;
-}
-
 void DB_Window::Destruct() {
-    APlayerController* CallFunc_GetOwningPlayer_ReturnValue;
-    bool CallFunc_IsValid_ReturnValue;
     HideAllTips();
     Stop();
-    if (Manual) {
-        CallFunc_GetOwningPlayer_ReturnValue = GetOwningPlayer();
-        CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(CallFunc_GetOwningPlayer_ReturnValue);
-        if (CallFunc_IsValid_ReturnValue) {
-            CallFunc_GetOwningPlayer_ReturnValue = GetOwningPlayer();
-            UWidgetBlueprintLibrary::SetInputMode_GameOnly(CallFunc_GetOwningPlayer_ReturnValue);
-            CallFunc_GetOwningPlayer_ReturnValue = GetOwningPlayer();
-            CallFunc_GetOwningPlayer_ReturnValue->bShowMouseCursor = false;
-            return;
-        } else {
-            return;
-        }
-    } else {
-        return;
-    }
 }
 
 void DB_Window::Open() {
@@ -703,11 +673,6 @@ void DB_Window::UpdateHeader() {
     CallFunc_Greater_IntInt_ReturnValue_1 = UKismetMathLibrary::Greater_IntInt(CallFunc_Array_Length_ReturnValue_1, 4);
     CallFunc_BooleanAND_ReturnValue = CallFunc_Greater_IntInt_ReturnValue_1 && CallFunc_EqualEqual_IntInt_ReturnValue_7;
     CountText->SetVisibility(!CallFunc_BooleanAND_ReturnValue == false ? Temp_byte_Variable_1 : !CallFunc_BooleanAND_ReturnValue == true ? Temp_byte_Variable : K2Node_Select_Default_3);
-    CallFunc_EqualEqual_IntInt_ReturnValue_7 = UKismetMathLibrary::EqualEqual_IntInt(Tab, 0);
-    CallFunc_Array_Length_ReturnValue_1 = Players.Num();
-    CallFunc_Greater_IntInt_ReturnValue_1 = UKismetMathLibrary::Greater_IntInt(CallFunc_Array_Length_ReturnValue_1, 4);
-    CallFunc_BooleanAND_ReturnValue = CallFunc_Greater_IntInt_ReturnValue_1 && CallFunc_EqualEqual_IntInt_ReturnValue_7;
-    FitToScreen(CallFunc_BooleanAND_ReturnValue);
     CallFunc_Add_IntInt_ReturnValue = UKismetMathLibrary::Add_IntInt(PageStart, 4);
     CallFunc_Add_IntInt_ReturnValue_1 = UKismetMathLibrary::Add_IntInt(PageStart, 1);
     CallFunc_Array_Length_ReturnValue = Shown.Num();
@@ -869,24 +834,6 @@ void DB_Window::UpdateRoster() {
     }
 }
 
-void DB_Window::FitToScreen(bool WithRoster) {
-    int32 CallFunc_Add_IntInt_ReturnValue;
-    float CallFunc_BreakVector2D_X;
-    float CallFunc_BreakVector2D_Y;
-    float CallFunc_Conv_IntToFloat_ReturnValue;
-    float CallFunc_FMax_ReturnValue;
-    float CallFunc_GetViewportScale_ReturnValue;
-    float CallFunc_SelectFloat_ReturnValue;
-    CallFunc_SelectFloat_ReturnValue = UKismetMathLibrary::SelectFloat(1148.0f, 1087.0f, WithRoster);
-    CallFunc_GetViewportScale_ReturnValue = UWidgetLayoutLibrary::GetViewportScale(this);
-    CallFunc_Add_IntInt_ReturnValue = UKismetMathLibrary::Add_IntInt(PanelWidth, 16);
-    CallFunc_FMax_ReturnValue = UKismetMathLibrary::FMax(CallFunc_GetViewportScale_ReturnValue, 0.1f);
-    CallFunc_Conv_IntToFloat_ReturnValue = UKismetMathLibrary::Conv_IntToFloat(CallFunc_Add_IntInt_ReturnValue);
-    UKismetMathLibrary::BreakVector2D(UWidgetLayoutLibrary::GetViewportSize(this), CallFunc_BreakVector2D_X, CallFunc_BreakVector2D_Y);
-    Fit->SetUserSpecifiedScale(UKismetMathLibrary::FMax(UKismetMathLibrary::FMin(UKismetMathLibrary::FMin(UKismetMathLibrary::Divide_FloatFloat(UKismetMathLibrary::Divide_FloatFloat(CallFunc_BreakVector2D_X, CallFunc_FMax_ReturnValue), CallFunc_Conv_IntToFloat_ReturnValue), UKismetMathLibrary::Divide_FloatFloat(UKismetMathLibrary::Divide_FloatFloat(CallFunc_BreakVector2D_Y, CallFunc_FMax_ReturnValue), CallFunc_SelectFloat_ReturnValue)), 1.0f), 0.3f));
-    return;
-}
-
 void DB_Window::GetChip(int32 ChipIndex, DB_Chip*& Chip) {
     UHorizontalBoxSlot* CallFunc_AddChildToHorizontalBox_ReturnValue;
     int32 CallFunc_Array_Add_ReturnValue;
@@ -949,24 +896,6 @@ void DB_Window::PageBy(int32 Step) {
     }
 }
 
-void DB_Window::Dismiss() {
-    APlayerController* CallFunc_GetOwningPlayer_ReturnValue;
-    HideAllTips();
-    if (Manual) {
-        CallFunc_GetOwningPlayer_ReturnValue = GetOwningPlayer();
-        UWidgetBlueprintLibrary::SetInputMode_GameOnly(CallFunc_GetOwningPlayer_ReturnValue);
-        CallFunc_GetOwningPlayer_ReturnValue = GetOwningPlayer();
-        CallFunc_GetOwningPlayer_ReturnValue->bShowMouseCursor = false;
-        RemoveFromParent();
-        Stop();
-        return;
-    } else {
-        CloseThisWindow();
-        Stop();
-        return;
-    }
-}
-
 void DB_Window::Stop() {
     UKismetSystemLibrary::K2_ClearTimer(this, "TimerRefresh");
     return;
@@ -983,23 +912,9 @@ void DB_Window::HideAllTips() {
     }
 }
 
+// The window lives in the hub's Dwarf Builds page; it is open while that page is shown (DB_HubPage).
 void DB_Window::IsOpenNow(bool& bOpen) {
-    UWindowManager* CallFunc_GetWindowManager_ReturnValue;
-    bool CallFunc_IsValid_ReturnValue;
-    if (Manual) {
-        OpenTmp = IsInViewport();
-    } else {
-        CallFunc_GetWindowManager_ReturnValue = UGameFunctionLibrary::GetWindowManager(this);
-        CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(CallFunc_GetWindowManager_ReturnValue);
-        if (CallFunc_IsValid_ReturnValue) {
-            CallFunc_GetWindowManager_ReturnValue = UGameFunctionLibrary::GetWindowManager(this);
-            OpenTmp = CallFunc_GetWindowManager_ReturnValue->IsWindowOpen(this);
-        } else {
-            OpenTmp = false;
-        }
-    }
-    bOpen = OpenTmp;
-    return;
+    bOpen = HubShown;
 }
 
 void DB_Window::InitOnce() {
@@ -1175,16 +1090,13 @@ void DB_Window::PublishMine() {
     }
 }
 
-// Escape closes the take dialog, else the window; E flips "more info" unless the code box is being typed in.
+// Escape closes the take dialog, else goes on to the hub; E flips "more info" unless the code box is being typed in.
 FEventReply DB_Window::OnKeyUp(FGeometry MyGeometry, FKeyEvent InKeyEvent) {
     FKey Key = UKismetInputLibrary::GetKey(InKeyEvent);
     bool Typing = CodeBox->HasKeyboardFocus() || CodeBox->HasFocusedDescendants();
     if (Key == FKey("Escape")) {
-        if (TakeOpen) {
-            CloseTake();
-        } else {
-            Dismiss();
-        }
+        if (!TakeOpen) return UWidgetBlueprintLibrary::Unhandled();
+        CloseTake();
     } else if (Key == FKey("E") && !Typing && UKismetSystemLibrary::IsValid(Data)) {
         Data->ToggleMoreInfo();
     }
@@ -1208,10 +1120,6 @@ FEventReply DB_Window::OnKeyDown(FGeometry MyGeometry, FKeyEvent InKeyEvent) {
 FEventReply DB_Window::OnMouseButtonDown(FGeometry MyGeometry, const FPointerEvent& MouseEvent) {
     SetKeyboardFocus();
     return UWidgetBlueprintLibrary::Handled();
-}
-
-bool DB_Window::ReceiveCanCloseWindow(FName InActionName, FKey InKey, bool InIsMouseEvent) {
-    return !TakeOpen;
 }
 
 }   // namespace UI

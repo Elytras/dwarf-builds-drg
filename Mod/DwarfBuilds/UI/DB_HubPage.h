@@ -1,110 +1,27 @@
-﻿// Dwarf Builds' page in a Mod Hub (Mod Hub, Elytras Mod Manager): what the mod is, and the button that opens its
-// window (DB_Mod::OpenWindow). The window has no key of its own; this page is how it opens.
+﻿// Dwarf Builds' page in a Mod Hub (Mod Hub, Elytras Mod Manager): the builds window itself (DB_Window), shown in the
+// page while it is open, as Build Inspector's page shows its builds. The window has no key of its own and no window of
+// its own any more; this page is where it lives.
 #pragma once
 #include "../DwarfBuilds.h"
 namespace UI {
 class DB_HubPage : public UUserWidget, public ::IHubPageWidget {
 public:
     UE_CLASS("/Game/_DwarfBuilds/UI/DB_HubPage", "DB_HubPage_C");
-    UE_WIDGET(UScrollBox, Root);
-    UE_WIDGET(UVerticalBox, Rows);
-    UE_WIDGET(UTextBlock, Title);
-    UE_WIDGET(UTextBlock, Sub);
-    UE_WIDGET(USizeBox, OpenBtnSize);
-    UE_WIDGET(UHorizontalBox, OpenBtnWrap);
-    UE_WIDGET(UImage, OpenBtnBarL);
-    UE_WIDGET(USpacer, OpenBtnGapL);
-    UE_WIDGET(UButton, OpenBtn);
-    UE_WIDGET(UTextBlock, OpenBtnText);
-    UE_WIDGET(USpacer, OpenBtnGapR);
-    UE_WIDGET(UImage, OpenBtnBarR);
+    UE_WIDGET(UOverlay, Root);
     UE_WIDGET(UTextBlock, Hint);
+    DB_Window* Win;
     DB_HubPage() {
-        UScrollBoxSlot *Rows_Slot = Cast<UScrollBoxSlot>(Root->AddChild(Rows));
-        Rows_Slot->Padding.Left = 24.0f;
-        Rows_Slot->Padding.Top = 20.0f;
-        Rows_Slot->Padding.Right = 24.0f;
-        Rows_Slot->Padding.Bottom = 20.0f;
-        Rows->AddChild(Title);
-        Title->Text = "DWARF BUILDS";
-        Title->ColorAndOpacity.SpecifiedColor = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
-        Title->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
-        Title->Font.TypefaceFontName = "Rift Soft Bold";
-        Title->Font.Size = 34;
-        UVerticalBoxSlot *Sub_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(Sub));
-        Sub_Slot->Padding.Top = 2.0f;
-        Sub->Text = "Every player's weapons, upgrades, overclocks, equipment and perks.";
-        Sub->ColorAndOpacity.SpecifiedColor = FLinearColor(0.85f, 0.76f, 0.55f, 1.0f);
-        Sub->Font.FontObject = &Assets::Art::Fonts::Acumin_Pro_Condensed;
-        Sub->Font.TypefaceFontName = "Condensed Normal";
-        Sub->Font.Size = 18;
-        UVerticalBoxSlot *OpenBtnSize_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(OpenBtnSize));
-        OpenBtnSize_Slot->Padding.Top = 18.0f;
-        OpenBtnSize_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Left;
-        OpenBtnSize->WidthOverride = 300.0f;
-        OpenBtnSize->HeightOverride = 48.0f;
-        OpenBtnSize->bOverride_WidthOverride = true;
-        OpenBtnSize->bOverride_HeightOverride = true;
-        OpenBtnSize->AddChild(OpenBtnWrap);
-        OpenBtnWrap->AddChild(OpenBtnBarL);
-        OpenBtnBarL->Brush.ImageSize = FVector2D(4.0f, 48.0f);
-        OpenBtnBarL->ColorAndOpacity = FLinearColor(0.2f, 0.11f, 0.055f, 1.0f);
-        UHorizontalBoxSlot *OpenBtnGapL_Slot = Cast<UHorizontalBoxSlot>(OpenBtnWrap->AddChild(OpenBtnGapL));
-        OpenBtnGapL_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        OpenBtnGapL->Size = FVector2D(4.0f, 1.0f);
-        UHorizontalBoxSlot *OpenBtn_Slot = Cast<UHorizontalBoxSlot>(OpenBtnWrap->AddChild(OpenBtn));
-        OpenBtn_Slot->Size.SizeRule = ESlateSizeRule::Fill;
-        OpenBtn->WidgetStyle.Normal.TintColor.SpecifiedColor = FLinearColor(0.104167f, 0.052518f, 0.026584f, 1.0f);
-        OpenBtn->WidgetStyle.Normal.ResourceName = FName();
-        OpenBtn->WidgetStyle.Normal.DrawAs = ESlateBrushDrawType::Image;
-        OpenBtn->WidgetStyle.Hovered.TintColor.SpecifiedColor = FLinearColor(0.16f, 0.08f, 0.04f, 1.0f);
-        OpenBtn->WidgetStyle.Hovered.ResourceName = FName();
-        OpenBtn->WidgetStyle.Hovered.DrawAs = ESlateBrushDrawType::Image;
-        OpenBtn->WidgetStyle.Pressed.TintColor.SpecifiedColor = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
-        OpenBtn->WidgetStyle.Pressed.ResourceName = FName();
-        OpenBtn->WidgetStyle.Pressed.DrawAs = ESlateBrushDrawType::Image;
-        OpenBtn->WidgetStyle.Disabled.TintColor.SpecifiedColor = FLinearColor(0.104167f, 0.052518f, 0.026584f, 1.0f);
-        OpenBtn->WidgetStyle.Disabled.DrawAs = ESlateBrushDrawType::Image;
-        OpenBtn->WidgetStyle.NormalPadding.Left = 16.0f;
-        OpenBtn->WidgetStyle.NormalPadding.Top = 0.0f;
-        OpenBtn->WidgetStyle.NormalPadding.Right = 16.0f;
-        OpenBtn->WidgetStyle.PressedPadding.Left = 16.0f;
-        OpenBtn->WidgetStyle.PressedPadding.Top = 0.0f;
-        OpenBtn->WidgetStyle.PressedPadding.Right = 16.0f;
-        OpenBtn->WidgetStyle.PressedPadding.Bottom = 2.0f;
-        OpenBtn->IsFocusable = false;
-        UButtonSlot *OpenBtnText_Slot = Cast<UButtonSlot>(OpenBtn->AddChild(OpenBtnText));
-        OpenBtnText_Slot->Padding.Left = 0.0f;
-        OpenBtnText_Slot->Padding.Top = 0.0f;
-        OpenBtnText_Slot->Padding.Right = 0.0f;
-        OpenBtnText_Slot->Padding.Bottom = 0.0f;
-        OpenBtnText->Text = "OPEN DWARF BUILDS";
-        OpenBtnText->ColorAndOpacity.SpecifiedColor = FLinearColor(0.85f, 0.76f, 0.55f, 1.0f);
-        OpenBtnText->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
-        OpenBtnText->Font.TypefaceFontName = "Rift Soft Bold";
-        OpenBtnText->Font.Size = 20;
-        OpenBtnText->Justification = ETextJustify::Center;
-        UHorizontalBoxSlot *OpenBtnGapR_Slot = Cast<UHorizontalBoxSlot>(OpenBtnWrap->AddChild(OpenBtnGapR));
-        OpenBtnGapR_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        OpenBtnGapR->Size = FVector2D(4.0f, 1.0f);
-        OpenBtnWrap->AddChild(OpenBtnBarR);
-        OpenBtnBarR->Brush.ImageSize = FVector2D(4.0f, 48.0f);
-        OpenBtnBarR->ColorAndOpacity = FLinearColor(0.2f, 0.11f, 0.055f, 1.0f);
-        UVerticalBoxSlot *Hint_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(Hint));
-        Hint_Slot->Padding.Top = 10.0f;
-        Hint->Text = "Escape or the X closes the window again.";
+        UOverlaySlot *Hint_Slot = Cast<UOverlaySlot>(Root->AddChild(Hint));
+        Hint_Slot->Padding.Left = 24.0f;
+        Hint_Slot->Padding.Top = 20.0f;
+        Hint->Text = "Dwarf Builds is not running here. It shows on the Space Rig and in missions.";
         Hint->ColorAndOpacity.SpecifiedColor = FLinearColor(0.85f, 0.76f, 0.55f, 1.0f);
         Hint->Font.FontObject = &Assets::Art::Fonts::Acumin_Pro_Condensed;
         Hint->Font.TypefaceFontName = "Condensed Normal";
         Hint->Font.Size = 18;
         Hint->AutoWrapText = true;
-        OpenBtn->OnReleased.Add(this, &DB_HubPage::OpenReleased);
-        OpenBtn->OnPressed.Add(this, &DB_HubPage::OpenPressed);
-        OpenBtn->OnClicked.Add(this, &DB_HubPage::OpenClicked);
+        Hint->Visibility = ESlateVisibility::Collapsed;
     }
-    void OpenReleased();
-    void OpenPressed();
-    void OpenClicked();
     void HubPageOpened();
     void HubPageClosed();
     void GetPageInfo(FText& PageName);
