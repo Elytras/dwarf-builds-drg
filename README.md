@@ -12,21 +12,21 @@ included here as the `Web` submodule.
 
 ## Features
 
-- Press B to see every player's weapons, upgrades, overclocks, equipment and perks. With
-  [Mod Hub](https://mod.io/g/drg/m/mod-hub) the key can be changed on the mod's page there.
+- Every player's weapons, upgrades, overclocks, equipment and perks in one window, opened from the Dwarf Builds
+  page of [Mod Hub](https://mod.io/g/drg/m/mod-hub) (or Elytras Mod Manager, which lists Mod Hub mods too).
 - The class selection screen shows your team's builds next to yours.
 - Copy any build as a short code, or paste one to preview it.
 - TAKE BUILD saves a code into one of your loadouts, using only what you own.
 - BROWSE opens the build website in the Steam overlay.
 - Client-side: other players do not need the mod.
 
-Other players' perks show when the host runs the mod too, since the game does not send them to clients. With this
-build on the host, every player who runs it shares their full build and perks with everyone; players without it
-show what the game sends.
+The game does not send a client other players' perks, and only part of their upgrades. When the host runs the mod
+too, every player who has it shares their full build and perks with everyone; players without it show what the
+game sends. Lobbies can mix this build, the mod.io release (0.1.0 or 0.2.0) and players without the mod.
 
 ## Screenshots
 
-**The window (B).** One column per player: weapons with every upgrade tier, overclocks, equipment and perks,
+**The window.** One column per player: weapons with every upgrade tier, overclocks, equipment and perks,
 with tooltips in the game's style.
 
 ![The Dwarf Builds window with four players: weapons, overclocks, equipment and perks of everyone in the lobby](.github/images/team-window.jpg)
@@ -46,15 +46,15 @@ in the Steam overlay.
 
 ## Installation
 
-Download `dwarf-builds-0.1.0.zip` from the [latest release](https://github.com/byrodi/dwarf-builds-drg/releases/latest)
-and add it to [mint](https://github.com/trumank/mint) as a local mod, then install the profile. Or build it from
-source (below).
+Build it from source (below) and add the pak to [mint](https://github.com/trumank/mint) as a local mod, together
+with a Mod Hub: [Mod Hub](https://mod.io/g/drg/m/mod-hub) or Elytras Mod Manager. The window opens only from the
+hub's menu. The upstream release is on [mod.io](https://mod.io/g/drg/m/dwarf-builds).
 
 ## Usage
 
 | Key or button | What it does |
 | --- | --- |
-| B (or your key from Mod Hub) | Opens the window (when no other game window is open). The same key or Escape closes it. |
+| Mod Hub → Dwarf Builds → OPEN DWARF BUILDS | Opens the window on top of the hub. Escape or the X closes it and shows the hub again. |
 | TEAM | Everyone in the lobby, one column per player. |
 | BUILD CODE | Paste a code, preview it, take it into a loadout, copy or publish your own. |
 | BROWSE | The website in the Steam overlay. |

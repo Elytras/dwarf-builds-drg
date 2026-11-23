@@ -19,9 +19,8 @@ compiles straight to cooked assets: `Mod/DwarfBuilds`, one header per Blueprint,
 
 The sources started as AssetGen's `bpdecomp.py` output of the 0.1.0 pak and were then edited by hand:
 
-- `DB_Mod` (the shared body of `InitSpacerig` and `InitCave`) is rewritten, with the open key bound as an input
-  key (`UE_INPUT_KEY("AnyKey", ...)`, as 0.1.0 cooked it).
-- `DB_Settings.OpenKey` defaults to B again; the decompile lost the default.
+- `DB_Mod` (the shared body of `InitSpacerig` and `InitCave`) is rewritten. It bound the open key as an input key
+  (`UE_INPUT_KEY("AnyKey", ...)`, as 0.1.0 cooked it) until the window moved to the Mod Hub menu (below).
 - `ModHub.h` declares the Mod Hub interfaces this mod uses, so it builds without Mod Hub's sources.
 - SDK spellings (`playerID`, `Upgrades`, `Name_0`, `isEmpty`) and enum constants in place of raw integers.
 - `DB_TakeDialog`: the "equip after saving" checkbox holds its row through an overlay, because AssetGen cannot yet
@@ -33,8 +32,9 @@ The sources started as AssetGen's `bpdecomp.py` output of the 0.1.0 pak and were
 - `DB_Column.ShowPlayer`: returns early when the player, class, name, level, loadout, perks and stats are what it
   last drew (re-drawn at least every 10 s anyway).
 - Class selection: `SelectPoll` (0.5 s, which in 0.1.0 ran for the whole level and scanned every widget until the
-  screen appeared) now stops once the overlay is attached, or 60 s after BeginPlay or the game's selection start.
-  The overlay then refreshes itself from its own tick, once a second while shown.
+  screen appeared) now stops once the overlay is attached, or 60 s after BeginPlay or the game's selection start
+  (3 s after a game window opens, from upstream 0.2.0). The overlay then refreshes itself from its own tick, once a
+  second while shown.
 
 ## What other players' builds come from
 
@@ -52,9 +52,9 @@ What a machine can see of another player, checked with three copies of the game 
 
 So this build adds `DB_BuildShare_v2`, one actor per player, which the host spawns owned by that player's controller.
 Each player's own copy of the mod sends its full build code (upgrades, overclocks, perks) through its actor
-(`Server_SetCode`), and the host replicates every actor to everyone. For a player without the mod the host fills in
-what it sees itself; perks it does not have show as "Not available. The game does not share this player's perks."
-instead of an empty row. With a host that does not run this build, clients fall back to 0.1.0's sources: the
+(`Server_SetCode`), and the host replicates every actor to everyone. A player without the mod keeps an empty actor
+and is shown from what the game replicates (the host filled it in until upstream 0.2.0 dropped that); perks nobody
+has show as "Not available. The game does not share this player's perks." instead of an empty row. With a host that does not run this build, clients fall back to 0.1.0's sources: the
 replicated selections for builds, the host's perk table for perks, or "not available".
 
 [Build Inspector](https://mod.io/g/drg/m/build-inspector) (AssemblyStorm) was checked for a better source. Its
@@ -63,9 +63,54 @@ licensed (Copyright (c) 2022 Truman Kilen). Its `LoadoutData::BuildFromPlayerSta
 `ItemUpgradeSelections`, first entry per slot, as 0.1.0 does, and shows no perks of other players. Nothing was taken
 from it.
 
+## Upstream 0.2.0, ported
+
+Upstream is [byrodi/dwarf-builds-drg](https://github.com/byrodi/dwarf-builds-drg) (remote `upstream`). Since 0.1.0
+(`6dfef6d`) it gained `ea15695` (mod.io badge), `40c148e`..`d4c3f12` (merged as PR #2, `build-share-v2`) and
+`f556716` (0.2.0). Its `40c148e` is this branch's relay (`DB_BuildShare_v2`) ported to its BPForge spec; the later
+commits are new. They change only `Tools/dwarfbuilds/*.py`, the spec, so each was ported by hand into the C++:
+
+| Upstream change | Here |
+| --- | --- |
+| Replicated surface: `DB_PerkShare_v1` unchanged; `DB_BuildShare_v2` with `Player` (RepNotify), `Code`, `PerksKnown`, `FromPlayer` in that order and the reliable `Server_SetCode(NewCode)` (`contract.py`) | Already ours: the cooked surface (`netsurface.py --write`) is identical to `Mod/netcontract.json`, so the file is unchanged and `bpbuild` keeps checking it. `Player` is now `UE_REPLICATED_USING(..., OnRep_Player)` as upstream's; a RepNotify is not on the wire, and netsurface does not record it. |
+| `NetUpdateFrequency` 0.5 on the link, every change pushed (`ForceNetUpdate`) | `DB_BuildShare_v2` constructor; `Server_SetCode`, `DB_Data::SendOwn` and `HostSync` push. |
+| `Server_SetCode` also ignores a code holding a character no build code has (`A-Z 0-9 : - .`) | `Net/DB_BuildShare_v2.cpp`. |
+| A link tells DB_Data when it arrives, gets its player, or (host) gets a code: `Tell` from BeginPlay, `OnRep_Player` and `Server_SetCode`; DB_Data's `LinkChanged` | Same names. No `LinkMap`: `Links` stays an array that `LinkFor` / `SendOwn` / `HostSync` scan (a lobby has a handful of players). |
+| No recurring timer: the 2 s `ShareTick` becomes `HostSync` (host: one link per player, owner fixed, stale links destroyed, 0.1.0 table on or off; everyone: `SendOwn`), run a moment (0.3 s) after the game's events: `OnCharacterSelectionStop`, `OnLastWindowClosed`, `OnPlayerJoined` / `OnPlayerLeave`, the local `OnSelectedCharacterChanged`; `ShareCheck` binds them and retries every 0.5 s (at most 40) while a source is missing | `DB_Data::ShareScan`, `ShareCheck`, `OnShareEvent` / `OnSharePlayer` / `OnShareClass` (one handler per delegate signature), `HostSync`, `ReceiveEndPlay` unbinds the game instance. |
+| `SendOwn`: a client sends once per code and link, only through a link it owns, retrying every 1 s (at most 20) while the owner has not replicated | `DB_Data::SendOwn`. |
+| The host no longer fills links for players without the mod | Dropped from `HostSync`; readers fall back to the replicated selections and the 0.1.0 table, as for a host without the mod. |
+| The 0.1.0 perk table collects (every 3 s) only while another player has sent no build | `DB_PerkShare_v1::ReceiveBeginPlay` no longer starts its own timer; `HostSync` starts or clears `Collect`. |
+| DB_Select tells DB_Data when your class or loadout changes; so does ApplyCode | `HostSync` timer from `DB_Select::Tick` and the end of `ApplyCode`. |
+| `PerksOf`: a link younger than 6 s without perks is state 2 ("waiting"), not 3 | `DB_Data::PerksOf`. |
+| `SaveCode` / `CodeOf` remember their inputs | Not ported: `SendOwn` now runs only on events, and `DB_Column::SameAsLast` already skips a column whose inputs did not change. |
+| The column's early-out also covers the perk table's classes and counts and "is this you" | `DB_Column::SameAsLast`. |
+| TAKE BUILD: a tier option or overclock this game does not have is choice -1 / `UnknownOc`, keeps the slot's own, counts as unknown; the card says UNKNOWN OVERCLOCK | `DB_Data::DecodeSlot` (new `UnknownOc` output, `?` in Digits), `ApplyPart`, `DB_WeaponCard::Show` (`CardOcUnknown`), `DB_Column::ShowBuild`. |
+| The loadout is written back into the structs that were read, so fields of a later game version keep their values | `DB_Data::ApplyCode` sets the seven slots and the selection map on `ApplyCode_Loadout` instead of making new structs. |
+| Class selection: a 3 s search after `OnFirstWindowOpened`, one look 2 s after a selection stop, a longer search keeps its end; `FindScreen` makes one scan while there is no selection screen | `DB_Mod::OnWindowOpened`, `OnSelectionStop`, `StartPoll(Seconds)`, `FindScreen` (the viewport fallback reuses the first scan). |
+| README, CHANGELOG, the mod.io link | Taken in our words (README, CHANGELOG). |
+
+Not checked against upstream's cooked 0.2.0 pak: it is not in the local MINT cache, and the check above compares
+with its spec (`contract.py`). A lobby with the mod.io 0.2.0 on one side is still to be tried.
+
+## Opening from the Mod Hub menu
+
+The window has no key of its own any more (no `DB_Settings.OpenKey`, no `UE_INPUT_KEY`, no key picker). A 0.1.0
+settings save still holds `OpenKey`; loading skips it.
+
+The Mod Hub API has no "menu entry" call: a hub lists every actor implementing `IHubMod` and shows the pages its
+`GetModPages` returns. `DB_Hub` is that actor (spawned by `DB_Mod` only when `/Game/_ModHub/IHubMod` exists), and
+`DB_HubPage` is its one page: OPEN DWARF BUILDS calls `DB_Mod::OpenWindow`. Mod Hub and Elytras Mod Manager
+(`ue-mods/BpMods/ElytrasModManager/HUB.md`) both host it. EMM's hub is a window on the game's window manager, so
+`OpenWindow` opens ours on top of it with `OpenWindowFromClass` (layer 60 over the hub's 24); Escape or the X closes
+ours and the hub is there again.
+
+`ModHub.h` declares the interfaces with `UE_COOKED`. Without it AssetGen cooked them, since a header in the mod's
+own folder counts as the mod's, and every build until now shipped its own `/Game/_ModHub/IHub*.uasset` stubs. Those
+could stand in for the hub's real interfaces, and made DB_Mod's "is a hub installed" check always pass.
+
 ## Network compatibility
 
-`Mod/netcontract.json` pins both replicated classes. `DB_PerkShare_v1` is exactly as 0.1.0 shipped it: class path,
+`Mod/netcontract.json` pins both replicated classes, as upstream 0.2.0 ships them (above). `DB_PerkShare_v1` is exactly as 0.1.0 shipped it: class path,
 `Actor` super, and the five arrays `Classes`, `Counts`, `Ids`, `Perks`, `Ranks`. `DB_BuildShare_v2` is new: `Player`,
 `Code`, `PerksKnown`, `FromPlayer` and the reliable `Server_SetCode(NewCode)`. AssetGen's `bpbuild.py` refuses to
 pack a build whose surface drops or changes any of it (`netsurface.py`).

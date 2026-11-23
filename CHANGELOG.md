@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Based on upstream 0.2.0, whose network surface it keeps: a lobby can mix this build, 0.2.0, 0.1.0 and players
+without the mod.
+
 ### Changed
+
+- The window opens from the mod's page in Mod Hub (or Elytras Mod Manager): OPEN DWARF BUILDS puts it on top of
+  the hub, and closing it shows the hub again. The B key, its setting and the key picker are gone.
+- From upstream 0.2.0: a build is sent when it changes (the game's own events), not on a timer; the host keeps the
+  0.1.0 perk table up only while a player without this version is in the lobby; the class selection screen is
+  searched for only a short while after the level starts, a selection starts or a game window opens.
 
 - Built from C++ with AssetGen instead of the BPForge editor spec; no Unreal editor needed (README, NOTES.md).
   Network-compatible with 0.1.0.
@@ -16,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Perks the game does not share show as not available instead of an empty row.
 - The team window and the class selection overlay redraw only what changed, and the class selection screen is
   no longer polled for the whole level.
+
+### Fixed
+
+- From upstream 0.2.0: TAKE BUILD cleared the slot's overclock or upgrade when the code named one this game version
+  does not have. It now keeps the slot's own and says so; the build shows UNKNOWN OVERCLOCK.
+- A code sent through the relay with a character no build code has is ignored.
+- The pak no longer ships its own copies of Mod Hub's interfaces (`/Game/_ModHub`), which could stand in for the
+  hub's real ones.
 
 ## [0.1.0] - 2026-11-22
 
