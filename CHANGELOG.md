@@ -12,8 +12,8 @@ without the mod.
 
 ### Changed
 
-- The window opens from the mod's page in Mod Hub (or Elytras Mod Manager): OPEN DWARF BUILDS puts it on top of
-  the hub, and closing it shows the hub again. The B key, its setting and the key picker are gone.
+- The window lives in the mod's page in Mod Hub (or Elytras Mod Manager): opening the hub on Dwarf Builds shows
+  the builds at once. The B key, its setting and the key picker are gone.
 - From upstream 0.2.0: a build is sent when it changes (the game's own events), not on a timer; the host keeps the
   0.1.0 perk table up only while a player without this version is in the lobby; the class selection screen is
   searched for only a short while after the level starts, a selection starts or a game window opens.
