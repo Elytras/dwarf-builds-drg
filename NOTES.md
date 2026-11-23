@@ -104,6 +104,12 @@ The Mod Hub API has no "menu entry" call: a hub lists every actor implementing `
 `OpenWindow` opens ours on top of it with `OpenWindowFromClass` (layer 60 over the hub's 24); Escape or the X closes
 ours and the hub is there again.
 
+Checked in drgq (job `dwarfbuilds-hub-open`, 024ded0, EMM in the profile, mod.io Mod Hub off, solo on the Space
+Rig): EMM lists "Dwarf Builds 0.2.0+assetgen" with one page ("Opened Dwarf Builds: 1 pages"); the page's
+`OpenClicked` draws the window over the hub (team view, your build and perks, the ESC hint); `Dismiss` takes it away
+and leaves the hub on the Dwarf Builds page. Solo, no `DB_BuildShare_v2` is spawned. Not checked: the click itself
+(drgq calls the handler), Mod Hub from mod.io as the host, and a lobby.
+
 `ModHub.h` declares the interfaces with `UE_COOKED`. Without it AssetGen cooked them, since a header in the mod's
 own folder counts as the mod's, and every build until now shipped its own `/Game/_ModHub/IHub*.uasset` stubs. Those
 could stand in for the hub's real interfaces, and made DB_Mod's "is a hub installed" check always pass.
