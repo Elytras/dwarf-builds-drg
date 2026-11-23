@@ -2,10 +2,9 @@
 #pragma once
 #include "../DwarfBuilds.h"
 namespace UI {
-class DB_Window : public UWindowWidget {
+class DB_Window : public UUserWidget {
 public:
     UE_WIDGET(UOverlay, Root);
-    UE_WIDGET(UBorder, Dim);
     UE_WIDGET(UScaleBox, Fit);
     UE_WIDGET(USizeBox, PanelBox);
     UE_WIDGET(UBorder, PanelEdge);
@@ -205,19 +204,6 @@ public:
     UE_WIDGET(UTextBlock, NextBtnText);
     UE_WIDGET(USpacer, NextBtnGapR);
     UE_WIDGET(UImage, NextBtnBarR);
-    UE_WIDGET(UHorizontalBox, KeyHint);
-    UE_WIDGET(USizeBox, KeySize);
-    UE_WIDGET(UBorder, KeyLine);
-    UE_WIDGET(UBorder, KeyFill);
-    UE_WIDGET(UTextBlock, KeyText);
-    UE_WIDGET(USizeBox, CloseBtnSize);
-    UE_WIDGET(UHorizontalBox, CloseBtnWrap);
-    UE_WIDGET(UImage, CloseBtnBarL);
-    UE_WIDGET(USpacer, CloseBtnGapL);
-    UE_WIDGET(UButton, CloseBtn);
-    UE_WIDGET(UTextBlock, CloseBtnText);
-    UE_WIDGET(USpacer, CloseBtnGapR);
-    UE_WIDGET(UImage, CloseBtnBarR);
     UE_WIDGET(UImage, HeaderLine);
     UE_WIDGET(UBorder, RosterBar);
     UE_WIDGET(UBorder, RosterFill);
@@ -311,23 +297,14 @@ public:
     TArray<DB_Column*> Columns;
     TArray<DB_Chip*> Chips;
     float ChipWidth = 180.0f;
-    bool Manual;
+    bool HubShown;   // DB_HubPage is shown in a hub: the window refreshes only then
     bool Inited;
     bool TakeOpen;
-    bool OpenTmp;
     FString CodeText;
     bool CodeValid;
     int32 PanelWidth = 1760;
     DB_Window() {
         bIsFocusable = true;
-        UOverlaySlot *Dim_Slot = Cast<UOverlaySlot>(Root->AddChild(Dim));
-        Dim_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Fill;
-        Dim_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Fill;
-        Dim->Padding.Left = 0.0f;
-        Dim->Padding.Top = 0.0f;
-        Dim->Padding.Right = 0.0f;
-        Dim->Padding.Bottom = 0.0f;
-        Dim->BrushColor = FLinearColor(0.03125f, 0.019749f, 0.013835f, 0.9f);
         UOverlaySlot *Fit_Slot = Cast<UOverlaySlot>(Root->AddChild(Fit));
         Fit_Slot->Padding.Left = 8.0f;
         Fit_Slot->Padding.Top = 8.0f;
@@ -335,7 +312,8 @@ public:
         Fit_Slot->Padding.Bottom = 8.0f;
         Fit_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Fill;
         Fit_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Fill;
-        Fit->Stretch = EStretch::UserSpecified;
+        Fit->Stretch = EStretch::ScaleToFit;   // shrinks to the hub page, never grows past 1
+        Fit->StretchDirection = EStretchDirection::DownOnly;
         Fit->AddChild(PanelBox);
         PanelBox->WidthOverride = 1760.0f;
         PanelBox->bOverride_WidthOverride = true;
@@ -1440,93 +1418,6 @@ public:
         NextBtnWrap->AddChild(NextBtnBarR);
         NextBtnBarR->Brush.ImageSize = FVector2D(4.0f, 44.0f);
         NextBtnBarR->ColorAndOpacity = FLinearColor(0.2f, 0.11f, 0.055f, 1.0f);
-        UHorizontalBoxSlot *KeyHint_Slot = Cast<UHorizontalBoxSlot>(HeaderRow->AddChild(KeyHint));
-        KeyHint_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        UHorizontalBoxSlot *KeySize_Slot = Cast<UHorizontalBoxSlot>(KeyHint->AddChild(KeySize));
-        KeySize_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        KeySize->HeightOverride = 32.0f;
-        KeySize->MinDesiredWidth = 32.0f;
-        KeySize->bOverride_HeightOverride = true;
-        KeySize->bOverride_MinDesiredWidth = true;
-        KeySize->AddChild(KeyLine);
-        KeyLine->Padding.Left = 1.0f;
-        KeyLine->Padding.Top = 1.0f;
-        KeyLine->Padding.Right = 1.0f;
-        KeyLine->Padding.Bottom = 1.0f;
-        KeyLine->BrushColor = FLinearColor(0.90466f, 0.83077f, 0.63076f, 1.0f);
-        UBorderSlot *KeyFill_Slot = Cast<UBorderSlot>(KeyLine->AddChild(KeyFill));
-        KeyFill_Slot->Padding.Left = 1.0f;
-        KeyFill_Slot->Padding.Top = 1.0f;
-        KeyFill_Slot->Padding.Right = 1.0f;
-        KeyFill_Slot->Padding.Bottom = 1.0f;
-        KeyFill->HorizontalAlignment = EHorizontalAlignment::HAlign_Center;
-        KeyFill->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        KeyFill->Padding.Left = 7.0f;
-        KeyFill->Padding.Top = 0.0f;
-        KeyFill->Padding.Right = 7.0f;
-        KeyFill->Padding.Bottom = 0.0f;
-        KeyFill->BrushColor = FLinearColor(0.012f, 0.008f, 0.005f, 1.0f);
-        UBorderSlot *KeyText_Slot = Cast<UBorderSlot>(KeyFill->AddChild(KeyText));
-        KeyText_Slot->Padding.Left = 7.0f;
-        KeyText_Slot->Padding.Top = 0.0f;
-        KeyText_Slot->Padding.Right = 7.0f;
-        KeyText_Slot->Padding.Bottom = 0.0f;
-        KeyText_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Center;
-        KeyText_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        KeyText->Text = "ESC";
-        KeyText->Font.FontObject = &Assets::Art::Fonts::Carbon;
-        KeyText->Font.TypefaceFontName = "2. Bold";
-        KeyText->Font.Size = 15;
-        UHorizontalBoxSlot *CloseBtnSize_Slot = Cast<UHorizontalBoxSlot>(KeyHint->AddChild(CloseBtnSize));
-        CloseBtnSize_Slot->Padding.Left = 8.0f;
-        CloseBtnSize_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        CloseBtnSize->HeightOverride = 44.0f;
-        CloseBtnSize->bOverride_HeightOverride = true;
-        CloseBtnSize->AddChild(CloseBtnWrap);
-        CloseBtnWrap->AddChild(CloseBtnBarL);
-        CloseBtnBarL->Brush.ImageSize = FVector2D(4.0f, 44.0f);
-        CloseBtnBarL->ColorAndOpacity = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
-        UHorizontalBoxSlot *CloseBtnGapL_Slot = Cast<UHorizontalBoxSlot>(CloseBtnWrap->AddChild(CloseBtnGapL));
-        CloseBtnGapL_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        CloseBtnGapL->Size = FVector2D(4.0f, 1.0f);
-        UHorizontalBoxSlot *CloseBtn_Slot = Cast<UHorizontalBoxSlot>(CloseBtnWrap->AddChild(CloseBtn));
-        CloseBtn_Slot->Size.SizeRule = ESlateSizeRule::Fill;
-        CloseBtn->WidgetStyle.Normal.TintColor.SpecifiedColor = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
-        CloseBtn->WidgetStyle.Normal.ResourceName = FName();
-        CloseBtn->WidgetStyle.Normal.DrawAs = ESlateBrushDrawType::Image;
-        CloseBtn->WidgetStyle.Hovered.TintColor.SpecifiedColor = FLinearColor(1.0f, 0.645482f, 0.0f, 1.0f);
-        CloseBtn->WidgetStyle.Hovered.ResourceName = FName();
-        CloseBtn->WidgetStyle.Hovered.DrawAs = ESlateBrushDrawType::Image;
-        CloseBtn->WidgetStyle.Pressed.TintColor.SpecifiedColor = FLinearColor(0.8f, 0.22f, 0.0f, 1.0f);
-        CloseBtn->WidgetStyle.Pressed.ResourceName = FName();
-        CloseBtn->WidgetStyle.Pressed.DrawAs = ESlateBrushDrawType::Image;
-        CloseBtn->WidgetStyle.Disabled.TintColor.SpecifiedColor = FLinearColor(0.14f, 0.125f, 0.11f, 1.0f);
-        CloseBtn->WidgetStyle.Disabled.DrawAs = ESlateBrushDrawType::Image;
-        CloseBtn->WidgetStyle.NormalPadding.Left = 16.0f;
-        CloseBtn->WidgetStyle.NormalPadding.Top = 0.0f;
-        CloseBtn->WidgetStyle.NormalPadding.Right = 16.0f;
-        CloseBtn->WidgetStyle.PressedPadding.Left = 16.0f;
-        CloseBtn->WidgetStyle.PressedPadding.Top = 0.0f;
-        CloseBtn->WidgetStyle.PressedPadding.Right = 16.0f;
-        CloseBtn->WidgetStyle.PressedPadding.Bottom = 2.0f;
-        CloseBtn->IsFocusable = false;
-        UButtonSlot *CloseBtnText_Slot = Cast<UButtonSlot>(CloseBtn->AddChild(CloseBtnText));
-        CloseBtnText_Slot->Padding.Left = 0.0f;
-        CloseBtnText_Slot->Padding.Top = 0.0f;
-        CloseBtnText_Slot->Padding.Right = 0.0f;
-        CloseBtnText_Slot->Padding.Bottom = 0.0f;
-        CloseBtnText->Text = "CLOSE";
-        CloseBtnText->ColorAndOpacity.SpecifiedColor = FLinearColor(0.01f, 0.01f, 0.01f, 1.0f);
-        CloseBtnText->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
-        CloseBtnText->Font.TypefaceFontName = "Rift Soft Bold";
-        CloseBtnText->Font.Size = 20;
-        CloseBtnText->Justification = ETextJustify::Center;
-        UHorizontalBoxSlot *CloseBtnGapR_Slot = Cast<UHorizontalBoxSlot>(CloseBtnWrap->AddChild(CloseBtnGapR));
-        CloseBtnGapR_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        CloseBtnGapR->Size = FVector2D(4.0f, 1.0f);
-        CloseBtnWrap->AddChild(CloseBtnBarR);
-        CloseBtnBarR->Brush.ImageSize = FVector2D(4.0f, 44.0f);
-        CloseBtnBarR->ColorAndOpacity = FLinearColor(1.0f, 0.332452f, 0.0f, 1.0f);
         PanelRows->AddChild(HeaderLine);
         HeaderLine->Brush.ImageSize = FVector2D(32.0f, 1.0f);
         HeaderLine->ColorAndOpacity = FLinearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -2029,7 +1920,6 @@ public:
         TabCodeOff->OnClicked.Add(this, &DB_Window::BndEvt__DB_Window_TabCodeOff_K2Node_ComponentBoundEvent_3_OnButtonClickedEvent__DelegateSignature);
         TabTeamOn->OnClicked.Add(this, &DB_Window::BndEvt__DB_Window_TabTeamOn_K2Node_ComponentBoundEvent_2_OnButtonClickedEvent__DelegateSignature);
         TabTeamOff->OnClicked.Add(this, &DB_Window::BndEvt__DB_Window_TabTeamOff_K2Node_ComponentBoundEvent_1_OnButtonClickedEvent__DelegateSignature);
-        CloseBtn->OnClicked.Add(this, &DB_Window::BndEvt__DB_Window_CloseBtn_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature);
     }
     void BndEvt__DB_Window_BrowserBtn_K2Node_ComponentBoundEvent_51_OnButtonReleasedEvent__DelegateSignature();
     void BndEvt__DB_Window_BrowserBtn_K2Node_ComponentBoundEvent_50_OnButtonPressedEvent__DelegateSignature();
@@ -2083,7 +1973,6 @@ public:
     void BndEvt__DB_Window_TabCodeOff_K2Node_ComponentBoundEvent_3_OnButtonClickedEvent__DelegateSignature();
     void BndEvt__DB_Window_TabTeamOn_K2Node_ComponentBoundEvent_2_OnButtonClickedEvent__DelegateSignature();
     void BndEvt__DB_Window_TabTeamOff_K2Node_ComponentBoundEvent_1_OnButtonClickedEvent__DelegateSignature();
-    void BndEvt__DB_Window_CloseBtn_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature();
     void OnRemovedFromFocusPath(FFocusEvent InFocusEvent);
     void OnFocusLost(FFocusEvent InFocusEvent);
     void Destruct();
@@ -2100,12 +1989,10 @@ public:
     void UpdateHeader();
     void UpdateRoster();
     bool RosterSame();
-    void FitToScreen(bool WithRoster);
     void GetChip(int32 ChipIndex, DB_Chip*& Chip);
     void SetFilter(int32 NewFilter);
     void SetTab(int32 NewTab);
     void PageBy(int32 Step);
-    void Dismiss();
     void Stop();
     void HideAllTips();
     void IsOpenNow(bool& bOpen);
@@ -2118,8 +2005,5 @@ public:
     FEventReply OnKeyUp(FGeometry MyGeometry, FKeyEvent InKeyEvent);
     FEventReply OnKeyDown(FGeometry MyGeometry, FKeyEvent InKeyEvent);
     FEventReply OnMouseButtonDown(FGeometry MyGeometry, const FPointerEvent& MouseEvent);
-protected:
-    void OnClosed();
-    bool ReceiveCanCloseWindow(FName InActionName, FKey InKey, bool InIsMouseEvent);
 };
 }   // namespace UI

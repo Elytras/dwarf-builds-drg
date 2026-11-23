@@ -92,23 +92,30 @@ commits are new. They change only `Tools/dwarfbuilds/*.py`, the spec, so each wa
 Not checked against upstream's cooked 0.2.0 pak: it is not in the local MINT cache, and the check above compares
 with its spec (`contract.py`). A lobby with the mod.io 0.2.0 on one side is still to be tried.
 
-## Opening from the Mod Hub menu
+## Living in the Mod Hub page
 
 The window has no key of its own any more (no `DB_Settings.OpenKey`, no `UE_INPUT_KEY`, no key picker). A 0.1.0
 settings save still holds `OpenKey`; loading skips it.
 
 The Mod Hub API has no "menu entry" call: a hub lists every actor implementing `IHubMod` and shows the pages its
 `GetModPages` returns. `DB_Hub` is that actor (spawned by `DB_Mod` only when `/Game/_ModHub/IHubMod` exists), and
-`DB_HubPage` is its one page: OPEN DWARF BUILDS calls `DB_Mod::OpenWindow`. Mod Hub and Elytras Mod Manager
-(`ue-mods/BpMods/ElytrasModManager/HUB.md`) both host it. EMM's hub is a window on the game's window manager, so
-`OpenWindow` opens ours on top of it with `OpenWindowFromClass` (layer 60 over the hub's 24); Escape or the X closes
-ours and the hub is there again.
+`DB_HubPage` is its one page. Mod Hub and Elytras Mod Manager (`ue-mods/BpMods/ElytrasModManager/HUB.md`) both host
+it.
 
-Checked in drgq (job `dwarfbuilds-hub-open`, 024ded0, EMM in the profile, mod.io Mod Hub off, solo on the Space
-Rig): EMM lists "Dwarf Builds 0.2.0+assetgen" with one page ("Opened Dwarf Builds: 1 pages"); the page's
-`OpenClicked` draws the window over the hub (team view, your build and perks, the ESC hint); `Dismiss` takes it away
-and leaves the hub on the Dwarf Builds page. Solo, no `DB_BuildShare_v2` is spawned. Not checked: the click itself
-(drgq calls the handler), Mod Hub from mod.io as the host, and a lobby.
+The page is the window: `DB_HubPage` makes one `DB_Window` and puts it in its overlay, filling the page
+(`GetContainerMode` stretches the page over the hub's pane), as Build Inspector's page shows its builds. On
+`HubPageOpened` it hands the window this world's `DB_Data` and calls `Open` (once-a-second refresh while
+`HubShown`); `HubPageClosed` stops the refresh and hides the tips. With no `DB_Data` (not on the Space Rig or in a
+mission) a hint says Dwarf Builds is not running here.
+
+`DB_Window` was a `UWindowWidget` the game's window manager opened over the hub (an OPEN DWARF BUILDS button on the
+page, until the user asked for the builds in the page itself, 2026-11-23). It is a plain `UUserWidget` now: no dim,
+no ESC hint or CLOSE button, no `Dismiss`. Its scale box shrinks it to the page (`ScaleToFit`, `DownOnly`) where
+`FitToScreen` scaled it to the viewport. Escape closes the take dialog, else goes on to the hub.
+
+Checked in drgq: job `dwarfbuilds-hub-embed` (c2306e3, EMM in the profile, solo on the Space Rig) opens the hub on
+Dwarf Builds and shoots it, closes and opens the hub and shoots again. Not checked: Mod Hub from mod.io as the host,
+and a lobby.
 
 `ModHub.h` declares the interfaces with `UE_COOKED`. Without it AssetGen cooked them, since a header in the mod's
 own folder counts as the mod's, and every build until now shipped its own `/Game/_ModHub/IHub*.uasset` stubs. Those

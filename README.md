@@ -54,7 +54,7 @@ hub's menu. The upstream release is on [mod.io](https://mod.io/g/drg/m/dwarf-bui
 
 | Key or button | What it does |
 | --- | --- |
-| Mod Hub → Dwarf Builds → OPEN DWARF BUILDS | Opens the window on top of the hub. Escape or the X closes it and shows the hub again. |
+| Mod Hub → Dwarf Builds | The mod's page is the window: every player's builds, shown as soon as the page opens. |
 | TEAM | Everyone in the lobby, one column per player. |
 | BUILD CODE | Paste a code, preview it, take it into a loadout, copy or publish your own. |
 | BROWSE | The website in the Steam overlay. |

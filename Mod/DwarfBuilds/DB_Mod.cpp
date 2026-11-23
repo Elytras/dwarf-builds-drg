@@ -1,4 +1,4 @@
-﻿// DB_Mod: spawning the mod's actors, opening the window, and finding the class selection screen.
+﻿// DB_Mod: spawning the mod's actors and finding the class selection screen.
 #include "DwarfBuilds.h"
 
 namespace {
@@ -6,7 +6,6 @@ const float PollSeconds = 0.5f;
 const float PollWindow = 60.0f;   // how long SelectPoll looks after BeginPlay or a selection start,
 const float OpenWindowFor = 3.0f; // and after a game window opens (the selection screen opens like one)
 const float StopCheck = 2.0f;     // one look this long after a selection stop: a mission's screen is gone by then
-const int32 WindowLayer = 60;
 }
 
 // First we keep one DB_Mod per world: InitSpacerig and InitCave can both be spawned, and a mod list may hold the
@@ -66,34 +65,6 @@ void DB_Mod::ReceiveEndPlay(TEnum<EEndPlayReason> EndPlayReason) {
     if (UKismetSystemLibrary::IsValid(WM)) WM->OnFirstWindowOpened.Remove(this, &DB_Mod::OnWindowOpened);
     UKismetSystemLibrary::K2_ClearTimer(this, "SelectPoll");
     if (UKismetSystemLibrary::IsValid(SelectUI)) SelectUI->Detach();
-}
-
-// From the hub page's OPEN button. Through the game's window manager when it has one: the hub is a window of its own
-// there, so ours goes on top and closing ours shows the hub again. Else by hand. Open already: nothing.
-void DB_Mod::OpenWindow() {
-    DB_Data* Data = (DB_Data*)UGameplayStatics::GetActorOfClass(this, DB_Data::StaticClass());
-    TArray<UUserWidget*> Shown;
-    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Shown, DB_Window::StaticClass(), true);
-    if (Shown.Num() > 0) return;
-    UWindowManager* WM = UGameFunctionLibrary::GetWindowManager(this);
-    if (UKismetSystemLibrary::IsValid(WM)) {
-        DB_Window* Win = Cast<DB_Window>(WM->OpenWindowFromClass(DB_Window::StaticClass(), WindowLayer, true));
-        if (Win != nullptr) {
-            Win->Manual = false;
-            Win->Data = Data;
-            Win->Open();
-            return;
-        }
-    }
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    DB_Window* Win = Cast<DB_Window>(UWidgetBlueprintLibrary::Create(this, DB_Window::StaticClass(), PC));
-    if (Win == nullptr) return;
-    Win->Manual = true;
-    Win->AddToViewport(WindowLayer);
-    Win->Data = Data;
-    UWidgetBlueprintLibrary::SetInputMode_UIOnlyEx(PC, Win, EMouseLockMode::DoNotLock);
-    PC->bShowMouseCursor = true;
-    Win->Open();
 }
 
 // Only the selection proper (not the forge, the customization or the end screen) shows the class selection screen.
