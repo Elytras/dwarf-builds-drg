@@ -114,10 +114,14 @@ public:
     TArray<FSaveGameStatePerkItem> PerksOf_Items;
     DB_PerkShare_v1* PerksOf_Share;
     DB_BuildShare_v2* PerksOf_Link;
-    // Every player's DB_BuildShare_v2 in this world, found again by each ShareTick; and the code this client last
-    // sent its own.
+    // Every player's DB_BuildShare_v2 in this world (ShareScan, LinkChanged); the code this client last sent and the
+    // link it went through; SendOwn's tries while the link has no owner yet; ShareCheck's tries while a source of the
+    // game's events is missing.
     TArray<DB_BuildShare_v2*> Links;
     FString SentCode;
+    DB_BuildShare_v2* SentLink;
+    int32 OwnerTries;
+    int32 HookTries;
     TArray<UPerkAsset*> SortPerks_Perks;
     TArray<int32> SortPerks_Ranks;
     FText ItemTexts_Name;
@@ -142,7 +146,6 @@ public:
     TArray<TSoftObjectPtr<UObject>> ToggleMoreInfo_Refs;
     bool ToggleMoreInfo_On;
     bool MoreInfo_On;
-    FKey OpenKey_Key;
     DB_Settings* Settings;
     UObject* LiveTip_Obj;
     DB_Tip* LiveTip_Tip;
@@ -218,7 +221,7 @@ public:
     void HeaderOfCode(FString Code, FString& Sub, FLinearColor& Color, UTexture2D*& Icon);
     void PerksOf(AFSDPlayerState* Player, TArray<UPerkAsset*>& Perks, TArray<int32>& Ranks, int32& State);
     void ClassOfCode(FString Code, UPlayerCharacterID*& Class, bool& Valid);
-    void DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>& Choices, UOverclockUpgrade*& Overclock, FString& Digits, bool& Found);
+    void DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>& Choices, UOverclockUpgrade*& Overclock, FString& Digits, bool& Found, bool& UnknownOc);
     void PerksOfCode(FString Code, TArray<UPerkAsset*>& Perks, TArray<int32>& Ranks, bool& Found);
     void TierOptions(UItemID* Item, int32 Tier, TArray<UItemUpgrade*>& Upgrades);
     void ItemVisual(UItemID* Item, FText& Name, FText& Category, UTexture2D*& Line, UTexture2D*& Fill);
@@ -228,15 +231,20 @@ public:
     void PerkTip(UPerkAsset* Perk, int32 Rank, FText& Title, FText& Category, FText& Body, UTexture2D*& Icon, FLinearColor& Color);
     void MoreInfo(bool& On);
     void ToggleMoreInfo();
-    void OpenKey(FKey& Key);
-    void SetOpenKey(FKey Key);
     void RegisterTip(DB_Tip* Tip);
     void HideTips();
     void CanTake(bool& Ok, FString& Reason);
     void SlotInfo(UPlayerCharacterID* Class, int32& Count, int32& Current);
     void ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applied, int32& Skipped, FString& Message);
     void LocalPS(AFSDPlayerState*& PS);
-    void ShareTick();
+    void ShareScan();
+    void ShareCheck();
+    void OnShareEvent();
+    void OnSharePlayer(AFSDPlayerState* PlayerState);
+    void OnShareClass(TSubclassOf<APlayerCharacter> NewCharacter);
+    void LinkChanged(DB_BuildShare_v2* Link);
+    void SendOwn();
+    void HostSync();
     DB_BuildShare_v2* LinkFor(AFSDPlayerState* Player);
     void ClassLetter(UPlayerCharacterID* Class, FString& Letter, FString& Name);
     void SlotItems(UPlayerCharacterID* Class, int32 Slot, TArray<UItemID*>& Items, TArray<FGuid>& Ids);
@@ -263,4 +271,5 @@ public:
     void LoadSettings();
 protected:
     void ReceiveBeginPlay();
+    void ReceiveEndPlay(TEnum<EEndPlayReason> EndPlayReason);
 };

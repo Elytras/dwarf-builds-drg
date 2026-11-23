@@ -17,7 +17,7 @@ void DB_Hub::ModRegistered(TScriptInterface<::IHub> Hub) {
 void DB_Hub::GetModInfo(FText& ModName, FText& ModAuthor, FText& ModVersion) {
     ModName = "Dwarf Builds";
     ModAuthor = "rodionmasalov";
-    ModVersion = "0.1.0";
+    ModVersion = "0.2.0+assetgen";
     return;
 }
 

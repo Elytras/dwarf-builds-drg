@@ -84,7 +84,8 @@ void DB_WeaponCard::BndEvt__DB_WeaponCard_NameBtn_K2Node_ComponentBoundEvent_0_O
     }
 }
 
-void DB_WeaponCard::Show(UItemID* Item, TArray<int32>& Choices, UOverclockUpgrade* Overclock, FString Digits) {
+// UnknownOc (DB_Data::DecodeSlot): the code names an overclock this game does not have, shown as UNKNOWN OVERCLOCK.
+void DB_WeaponCard::Show(UItemID* Item, TArray<int32>& Choices, UOverclockUpgrade* Overclock, FString Digits, bool UnknownOc) {
     UImage* CallFunc_Array_Get_Item;
     DB_UpgCell* CallFunc_Array_Get_Item_1;
     bool CallFunc_BooleanAND_ReturnValue;
@@ -104,6 +105,7 @@ void DB_WeaponCard::Show(UItemID* Item, TArray<int32>& Choices, UOverclockUpgrad
     EnsureCells();
     CardItem = Item;
     CardOc = Overclock;
+    CardOcUnknown = UnknownOc;
     CallFunc_BooleanAND_ReturnValue_2 = UKismetSystemLibrary::IsValid(ItemTipFor) && UKismetMathLibrary::NotEqual_ObjectObject(ItemTipFor, Item);
     if (CallFunc_BooleanAND_ReturnValue_2) {
         NameBtn->SetToolTip(nullptr);
@@ -223,7 +225,7 @@ void DB_WeaponCard::ShowOverclock() {
             OcIcon->SetVisibility(Temp_bool_Variable == false ? Temp_byte_Variable_1 : Temp_bool_Variable == true ? Temp_byte_Variable : K2Node_Select_Default);
             return;
         } else {
-            OcName->SetText("NO OVERCLOCK");
+            OcName->SetText(UKismetTextLibrary::Conv_StringToText(UKismetMathLibrary::SelectString("UNKNOWN OVERCLOCK", "NO OVERCLOCK", CardOcUnknown)));
             OcName->SetColorAndOpacity(FSlateColor(FLinearColor(0.36625f, 0.30947f, 0.19462f, 1.0f), ESlateColorStylingMode::UseColor_Specified));
             OcType->SetText(FText());
             OcTypeBox->SetVisibility(ESlateVisibility::Collapsed);

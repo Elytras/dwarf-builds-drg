@@ -7,9 +7,12 @@ void DB_PerkShare_v1::ReceiveBeginPlay() {
     bool CallFunc_BooleanAND_ReturnValue;
     FTimerHandle CallFunc_K2_SetTimer_ReturnValue;
     CallFunc_BooleanAND_ReturnValue = UKismetMathLibrary::BooleanAND(HasAuthority(), UKismetSystemLibrary::IsServer(this));
+    // The host: DB_Data.HostSync a moment later starts the Collect timer when a player needs the table (one who sent
+    // no build), and stops it when nobody does.
     if (CallFunc_BooleanAND_ReturnValue) {
-        CallFunc_K2_SetTimer_ReturnValue = UKismetSystemLibrary::K2_SetTimer(this, "Collect", 3.0f, true, 0.0f, 0.0f);
-        Collect();
+        AActor* Data = UGameplayStatics::GetActorOfClass(this, DB_Data::StaticClass());
+        if (UKismetSystemLibrary::IsValid(Data))
+            CallFunc_K2_SetTimer_ReturnValue = UKismetSystemLibrary::K2_SetTimer(Data, "HostSync", 0.3f, false, 0.0f, 0.0f);
         return;
     } else {
         return;

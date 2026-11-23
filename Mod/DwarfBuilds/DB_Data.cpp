@@ -79,7 +79,8 @@ void DB_Data::ReceiveBeginPlay() {
     FSoftObjectPath CallFunc_MakeSoftObjectPath_ReturnValue_3;
     FSoftObjectPath CallFunc_MakeSoftObjectPath_ReturnValue_4;
     LoadSettings();
-    UKismetSystemLibrary::K2_SetTimer(this, "ShareTick", 2.0f, true, 0.0f, 0.0f);
+    ShareScan();
+    ShareCheck();
     CallFunc_MakeSoftObjectPath_ReturnValue = UKismetSystemLibrary::MakeSoftObjectPath("/Game/UI/Menu_Loadout/Assets/Upgrade_BG.Upgrade_BG");
     CallFunc_Conv_SoftObjPathToSoftObjRef_ReturnValue = UKismetSystemLibrary::Conv_SoftObjPathToSoftObjRef(CallFunc_MakeSoftObjectPath_ReturnValue);
     UKismetSystemLibrary::LoadAsset(this, CallFunc_Conv_SoftObjPathToSoftObjRef_ReturnValue, {this, &DB_Data::OnHexBgLoaded});
@@ -382,8 +383,14 @@ void DB_Data::PerksOf(AFSDPlayerState* Player, TArray<UPerkAsset*>& Perks, TArra
             }
             // The game sends a player's perks to the host only at times, and to clients never: none known for
             // another player means unknown, not "no perks".
+            // But a player whose link is young may still send their build (their mod does it when the link reaches
+            // them): "not received yet" for 6 s, so "not available" does not flash.
             if (!CallFunc_EqualEqual_ObjectObject_ReturnValue && PerksOf_Perks.Num() == 0) {
                 PerksOf_State = 3;
+                for (DB_BuildShare_v2* Young : Links)
+                    if (UKismetSystemLibrary::IsValid(Young) && Young->Player == Player &&
+                        Young->GetGameTimeSinceCreation() < 6.0f)
+                        PerksOf_State = 2;
                 goto L_03DE;
             }
             SortPerks();
@@ -404,7 +411,10 @@ void DB_Data::ClassOfCode(FString Code, UPlayerCharacterID*& Class, bool& Valid)
     return;
 }
 
-void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>& Choices, UOverclockUpgrade*& Overclock, FString& Digits, bool& Found) {
+// A tier digit above the tier's options, and an overclock number above the item's overclocks, come from a game version
+// that has more of them: the choice is -1 (not 0) and UnknownOc is true (not "no overclock"), so ApplyPart keeps what
+// the slot has instead of clearing it. Both show as nothing chosen.
+void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>& Choices, UOverclockUpgrade*& Overclock, FString& Digits, bool& Found, bool& UnknownOc) {
     int32 CallFunc_Array_Add_ReturnValue;
     UOverclockUpgrade* CallFunc_Array_Get_Item;
     FString CallFunc_Array_Get_Item_1;
@@ -430,6 +440,7 @@ void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>
     DecodeSlot_Overclock = nullptr;
     DecodeSlot_Digits = "";
     DecodeSlot_Found = false;
+    bool OcBeyond = false;
     DecodeSlot_Choices.Clear();
     ParseCode(Code, CallFunc_ParseCode_Valid);
     if (CallFunc_ParseCode_Valid) {
@@ -463,9 +474,9 @@ void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>
                                 DecodeSlot_Digit = UKismetStringLibrary::Conv_StringToInt(UKismetStringLibrary::GetSubstring(DecodeSlot_TierText, Temp_int_Variable, 1));
                                 CallFunc_GreaterEqual_IntInt_ReturnValue_2 = UKismetMathLibrary::GreaterEqual_IntInt(DecodeSlot_Digit, 1);
                                 DecodeSlot_Tiers.Get(Temp_int_Variable, CallFunc_Array_Get_Item_2);
-                                DecodeSlot_Choice = UKismetMathLibrary::SelectInt(DecodeSlot_Digit, 0, UKismetMathLibrary::BooleanAND(CallFunc_GreaterEqual_IntInt_ReturnValue_2, UKismetMathLibrary::LessEqual_IntInt(DecodeSlot_Digit, CallFunc_Array_Get_Item_2.Upgrades.Num())));
+                                DecodeSlot_Choice = UKismetMathLibrary::SelectInt(DecodeSlot_Digit, DecodeSlot_Digit > CallFunc_Array_Get_Item_2.Upgrades.Num() ? -1 : 0, UKismetMathLibrary::BooleanAND(CallFunc_GreaterEqual_IntInt_ReturnValue_2, UKismetMathLibrary::LessEqual_IntInt(DecodeSlot_Digit, CallFunc_Array_Get_Item_2.Upgrades.Num())));
                                 CallFunc_Array_Add_ReturnValue = DecodeSlot_Choices.Add(DecodeSlot_Choice);
-                                DecodeSlot_Digits = UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(DecodeSlot_Digits, UKismetMathLibrary::SelectString(" ", "", UKismetMathLibrary::Greater_IntInt(Temp_int_Variable, 0))), UKismetStringLibrary::Conv_IntToString(DecodeSlot_Choice));
+                                DecodeSlot_Digits = UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(DecodeSlot_Digits, UKismetMathLibrary::SelectString(" ", "", UKismetMathLibrary::Greater_IntInt(Temp_int_Variable, 0))), UKismetMathLibrary::SelectString("?", UKismetStringLibrary::Conv_IntToString(DecodeSlot_Choice), DecodeSlot_Choice < 0));
                                 Temp_int_Variable = UKismetMathLibrary::Add_IntInt(Temp_int_Variable, 1);
                             } else {
                                 break;
@@ -480,6 +491,8 @@ void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>
                     if (CallFunc_BooleanAND_ReturnValue_1) {
                         DecodeSlot_OCs.Get(UKismetMathLibrary::Subtract_IntInt(DecodeSlot_OcIndex, 1), CallFunc_Array_Get_Item);
                         DecodeSlot_Overclock = CallFunc_Array_Get_Item;
+                    } else {
+                        OcBeyond = DecodeSlot_OcIndex > DecodeSlot_OCs.Num();
                     }
                 }
             }
@@ -490,6 +503,7 @@ void DB_Data::DecodeSlot(FString Code, int32 Slot, UItemID*& Item, TArray<int32>
     Overclock = DecodeSlot_Overclock;
     Digits = DecodeSlot_Digits;
     Found = DecodeSlot_Found;
+    UnknownOc = OcBeyond;
     return;
 }
 
@@ -838,40 +852,6 @@ void DB_Data::ToggleMoreInfo() {
     }
 }
 
-void DB_Data::OpenKey(FKey& Key) {
-    bool CallFunc_IsValid_ReturnValue;
-    bool CallFunc_IsValid_ReturnValue_1;
-    OpenKey_Key = FKey("B");
-    CallFunc_IsValid_ReturnValue_1 = UKismetSystemLibrary::IsValid(Settings);
-    if (!CallFunc_IsValid_ReturnValue_1) {
-        LoadSettings();
-    }
-    CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Settings);
-    if (CallFunc_IsValid_ReturnValue) {
-        OpenKey_Key = Settings->OpenKey;
-    }
-    Key = OpenKey_Key;
-    return;
-}
-
-void DB_Data::SetOpenKey(FKey Key) {
-    bool CallFunc_IsValid_ReturnValue;
-    bool CallFunc_IsValid_ReturnValue_1;
-    bool CallFunc_SaveGameToSlot_ReturnValue;
-    CallFunc_IsValid_ReturnValue_1 = UKismetSystemLibrary::IsValid(Settings);
-    if (!CallFunc_IsValid_ReturnValue_1) {
-        LoadSettings();
-    }
-    CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Settings);
-    if (CallFunc_IsValid_ReturnValue) {
-        Settings->OpenKey = Key;
-        CallFunc_SaveGameToSlot_ReturnValue = UGameplayStatics::SaveGameToSlot(Settings, "DwarfBuilds", 0);
-        return;
-    } else {
-        return;
-    }
-}
-
 void DB_Data::RegisterTip(DB_Tip* Tip) {
     int32 CallFunc_Array_Add_ReturnValue;
     int32 CallFunc_Array_Add_ReturnValue_1;
@@ -1026,6 +1006,7 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
     UOverclockUpgrade* CallFunc_DecodeSlot_Overclock;
     bool CallFunc_EqualEqual_ObjectObject_ReturnValue;
     FLoadoutCopy CallFunc_GetCurrentLoadout_ReturnValue;
+    bool CallFunc_DecodeSlot_UnknownOc;
     bool CallFunc_IsValid_ReturnValue;
     bool CallFunc_IsValid_ReturnValue_1;
     bool CallFunc_IsValid_ReturnValue_2;
@@ -1039,8 +1020,6 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
     int32 CallFunc_SlotInfo_Count;
     int32 CallFunc_SlotInfo_Current;
     TArray<FGuid> K2Node_MakeArray_Array;
-    FItemLoadout K2Node_MakeStruct_ItemLoadout;
-    FUpgradeLoadout K2Node_MakeStruct_UpgradeLoadout;
     int32 Temp_int_Variable;
     int32 Temp_int_Variable_1;
     ApplyCode_Applied = 0;
@@ -1064,7 +1043,7 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
                     while (true) {
                         CallFunc_LessEqual_IntInt_ReturnValue = UKismetMathLibrary::LessEqual_IntInt(Temp_int_Variable, 6);
                         if (CallFunc_LessEqual_IntInt_ReturnValue) {
-                            DecodeSlot(Code, Temp_int_Variable, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found);
+                            DecodeSlot(Code, Temp_int_Variable, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found, CallFunc_DecodeSlot_UnknownOc);
                             if (!CallFunc_DecodeSlot_Found) {
                                 ApplyCode_Unknown = UKismetMathLibrary::Add_IntInt(ApplyCode_Unknown, 1);
                             }
@@ -1090,7 +1069,9 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
                                         ApplyPart(Code, Temp_int_Variable_1);
                                         Temp_int_Variable_1 = UKismetMathLibrary::Add_IntInt(Temp_int_Variable_1, 1);
                                     } else {
-                                        K2Node_MakeStruct_UpgradeLoadout.Loadout = ApplyCode_Map;
+                                        // The seven code slots and their selections go back into the structs that
+                                        // were read: everything else in them (flare, icon, perks, vanity, fields of a
+                                        // later game version) keeps its value.
                                         ApplyCode_Guids.Get(6, CallFunc_Array_Get_Item);
                                         ApplyCode_Guids.Get(5, CallFunc_Array_Get_Item_1);
                                         ApplyCode_Guids.Get(4, CallFunc_Array_Get_Item_2);
@@ -1098,17 +1079,14 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
                                         ApplyCode_Guids.Get(2, CallFunc_Array_Get_Item_4);
                                         ApplyCode_Guids.Get(1, CallFunc_Array_Get_Item_5);
                                         ApplyCode_Guids.Get(0, CallFunc_Array_Get_Item_6);
-                                        K2Node_MakeStruct_ItemLoadout.PrimaryWeapon = CallFunc_Array_Get_Item_6;
-                                        K2Node_MakeStruct_ItemLoadout.SecondaryWeapon = CallFunc_Array_Get_Item_5;
-                                        K2Node_MakeStruct_ItemLoadout.TraversalTool = CallFunc_Array_Get_Item_4;
-                                        K2Node_MakeStruct_ItemLoadout.ClassTool = CallFunc_Array_Get_Item_3;
-                                        K2Node_MakeStruct_ItemLoadout.Armor = CallFunc_Array_Get_Item_2;
-                                        K2Node_MakeStruct_ItemLoadout.Flare = ApplyCode_Loadout.ItemLoadout.Flare;
-                                        K2Node_MakeStruct_ItemLoadout.MiningTool = CallFunc_Array_Get_Item;
-                                        K2Node_MakeStruct_ItemLoadout.Grenade = CallFunc_Array_Get_Item_1;
-                                        K2Node_MakeStruct_ItemLoadout.iconIndex = ApplyCode_Loadout.ItemLoadout.iconIndex;
-                                        ApplyCode_Loadout.ItemLoadout = K2Node_MakeStruct_ItemLoadout;
-                                        ApplyCode_Loadout.UpgradeLoadout = K2Node_MakeStruct_UpgradeLoadout;
+                                        ApplyCode_Loadout.ItemLoadout.PrimaryWeapon = CallFunc_Array_Get_Item_6;
+                                        ApplyCode_Loadout.ItemLoadout.SecondaryWeapon = CallFunc_Array_Get_Item_5;
+                                        ApplyCode_Loadout.ItemLoadout.TraversalTool = CallFunc_Array_Get_Item_4;
+                                        ApplyCode_Loadout.ItemLoadout.ClassTool = CallFunc_Array_Get_Item_3;
+                                        ApplyCode_Loadout.ItemLoadout.Armor = CallFunc_Array_Get_Item_2;
+                                        ApplyCode_Loadout.ItemLoadout.MiningTool = CallFunc_Array_Get_Item;
+                                        ApplyCode_Loadout.ItemLoadout.Grenade = CallFunc_Array_Get_Item_1;
+                                        ApplyCode_Loadout.UpgradeLoadout.Loadout = ApplyCode_Map;
                                         ULoadoutFunctionLibrary::SetCurrLoadout(this, ApplyCode_Class, ApplyCode_Loadout);
                                         ApplyPerks(Code);
                                         CallFunc_BooleanAND_ReturnValue = UKismetMathLibrary::NotEqual_IntInt(Slot, ApplyCode_Old) && !EquipAfter;
@@ -1131,6 +1109,7 @@ void DB_Data::ApplyCode(FString Code, int32 Slot, bool EquipAfter, int32& Applie
                                         }
                                         ApplyCode_Save->SaveToDisk();
                                         ApplyCode_Save->SetIgnoreRandomLoadout(false);
+                                        UKismetSystemLibrary::K2_SetTimer(this, "HostSync", 0.3f, false, 0.0f, 0.0f);
                                         ApplyCode_Message = UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr("Saved to loadout ", UKismetMathLibrary::SelectString(UKismetStringLibrary::GetSubstring("ABCDEFGHIJKLMNOPQRSTUVWXYZ", Slot, 1), UKismetStringLibrary::Conv_IntToString(UKismetMathLibrary::Add_IntInt(Slot, 1)), UKismetMathLibrary::Less_IntInt(Slot, 26))), "."), UKismetMathLibrary::SelectString("", UKismetMathLibrary::SelectString(" 1 part you do not own was kept as it was.", UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(" ", UKismetStringLibrary::Conv_IntToString(ApplyCode_Skipped)), " parts you do not own were kept as they were."), UKismetMathLibrary::EqualEqual_IntInt(ApplyCode_Skipped, 1)), UKismetMathLibrary::EqualEqual_IntInt(ApplyCode_Skipped, 0))), UKismetMathLibrary::SelectString("", UKismetMathLibrary::SelectString(" 1 part of the code is unknown and was kept as it was.", UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(" ", UKismetStringLibrary::Conv_IntToString(ApplyCode_Unknown)), " parts of the code are unknown and were kept as they were."), UKismetMathLibrary::EqualEqual_IntInt(ApplyCode_Unknown, 1)), UKismetMathLibrary::EqualEqual_IntInt(ApplyCode_Unknown, 0))), UKismetMathLibrary::SelectString("", UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(" Perks not taken: ", UKismetStringLibrary::JoinStringArray(ApplyPerks_Skips, ", ")), "."), UKismetMathLibrary::EqualEqual_IntInt(ApplyPerks_Skips.Num(), 0))), UKismetMathLibrary::SelectString("", UKismetMathLibrary::SelectString(" 1 perk unknown to this game version was left out.", UKismetStringLibrary::Concat_StrStr(UKismetStringLibrary::Concat_StrStr(" ", UKismetStringLibrary::Conv_IntToString(ApplyPerks_Unknown)), " perks unknown to this game version were left out."), UKismetMathLibrary::EqualEqual_IntInt(ApplyPerks_Unknown, 1)), UKismetMathLibrary::EqualEqual_IntInt(ApplyPerks_Unknown, 0)));
                                         ApplyCode_Skipped = UKismetMathLibrary::Add_IntInt(ApplyCode_Skipped, ApplyPerks_Skips.Num());
                                         goto L_02D1;
@@ -1934,7 +1913,8 @@ void DB_Data::ApplyPart(FString Code, int32 CodeSlot) {
     bool Temp_bool_Variable_9;
     EItemUpgradeStatus Temp_byte_Variable;
     int32 Temp_int_Variable;
-    DecodeSlot(Code, CodeSlot, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found);
+    bool UnknownOc;
+    DecodeSlot(Code, CodeSlot, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found, UnknownOc);
     ApplyPart_Item = CallFunc_DecodeSlot_Item;
     ApplyPart_Choices = CallFunc_DecodeSlot_Choices;
     ApplyPart_Overclock = CallFunc_DecodeSlot_Overclock;
@@ -1974,7 +1954,10 @@ void DB_Data::ApplyPart(FString Code, int32 CodeSlot) {
                         ApplyPart_Choices.Get(Temp_int_Variable, CallFunc_Array_Get_Item_1);
                         ApplyPart_Choice = CallFunc_Array_Get_Item_1;
                         CallFunc_LessEqual_IntInt_ReturnValue_1 = UKismetMathLibrary::LessEqual_IntInt(ApplyPart_Choice, 0);
-                        if (CallFunc_LessEqual_IntInt_ReturnValue_1) {
+                        if (ApplyPart_Choice < 0) {
+                            // An option this game does not have: the slot's own choice stays.
+                            ApplyCode_Unknown += 1;
+                        } else if (CallFunc_LessEqual_IntInt_ReturnValue_1) {
                             ClearTier();
                         } else {
                             CallFunc_LessEqual_IntInt_ReturnValue = UKismetMathLibrary::LessEqual_IntInt(ApplyPart_Choice, ApplyPart_TierUps.Num());
@@ -2021,6 +2004,8 @@ void DB_Data::ApplyPart(FString Code, int32 CodeSlot) {
                                 }
                             }
                             ApplyCode_Skipped = UKismetMathLibrary::Add_IntInt(ApplyCode_Skipped, 1);
+                        } else if (UnknownOc) {
+                            ApplyCode_Unknown += 1;   // an overclock this game does not have: the slot's own stays
                         } else {
                             ApplyPart_OcGuid = ZeroGuid;
                         }
@@ -2490,70 +2475,182 @@ DB_BuildShare_v2* DB_Data::LinkFor(AFSDPlayerState* Player) {
     return nullptr;
 }
 
-// Every 2 s on every machine. First the world's links again. A client then sends its own build through its link once
-// that has reached it, and again whenever the build changes. The host keeps one link per player, owned by the
-// player's controller so the player can send through it, and fills in what it sees itself for a player who sent
-// nothing (no mod, or 0.1.0): the build from the replicated selections, the perks when the game gave them to the host.
-void DB_Data::ShareTick() {
+// The sharing runs on no schedule (as upstream 0.2.0): HostSync runs at BeginPlay, when a link arrives or gets its
+// player's code (LinkChanged), a moment after one of the game's events (ShareCheck binds them: a player joined or
+// left, the local player's class changed, the class selection ended, the last game window closed, which is where
+// loadouts and perks change), when DB_Select sees your class or loadout change, and after ApplyCode. Each event
+// starts a one-shot timer (EventDelay), which folds a burst of events into one call.
+
+// Every link of this world, once at BeginPlay; later ones tell DB_Data when they arrive (DB_BuildShare_v2::Tell).
+void DB_Data::ShareScan() {
     TArray<AActor*> Found;
     UGameplayStatics::GetAllActorsOfClass(this, DB_BuildShare_v2::StaticClass(), Found);
     Links.Clear();
-    for (AActor* Actor : Found) Links.Add((DB_BuildShare_v2*)Actor);
+    for (AActor* Actor : Found) Links.AddUnique((DB_BuildShare_v2*)Actor);
+}
+
+// Binds the game's events, again while a source is missing (it may not exist yet at BeginPlay), every HookRetry at
+// most HookTries times, and once more when the local player's link arrives. Binding twice is harmless: the engine
+// keeps one binding per object and function.
+void DB_Data::ShareCheck() {
+    bool Missing = false;
+    UFSDGameInstance* GI = UGameFunctionLibrary::GetFSDGameInstance(this);
+    if (UKismetSystemLibrary::IsValid(GI)) GI->OnCharacterSelectionStop.Add(this, &DB_Data::OnShareEvent);
+    UWindowManager* WM = UGameFunctionLibrary::GetWindowManager(this);
+    if (UKismetSystemLibrary::IsValid(WM)) {
+        WM->OnLastWindowClosed.Add(this, &DB_Data::OnShareEvent);
+    } else {
+        Missing = true;
+    }
+    AFSDGameState* State = UGameFunctionLibrary::GetFSDGameState(this);
+    if (UKismetSystemLibrary::IsValid(State)) {
+        State->OnPlayerJoined.Add(this, &DB_Data::OnSharePlayer);
+        State->OnPlayerLeave.Add(this, &DB_Data::OnSharePlayer);
+    } else {
+        Missing = true;
+    }
     AFSDPlayerState* Local;
     LocalPS(Local);
+    if (UKismetSystemLibrary::IsValid(Local)) {
+        Local->OnSelectedCharacterChanged.Add(this, &DB_Data::OnShareClass);
+    } else {
+        Missing = true;
+    }
+    HostSync();
+    if (Missing && HookTries < 40) {
+        HookTries += 1;
+        UKismetSystemLibrary::K2_SetTimer(this, "ShareCheck", 0.5f, false, 0.0f, 0.0f);
+    }
+}
+
+void DB_Data::OnShareEvent() {
+    UKismetSystemLibrary::K2_SetTimer(this, "HostSync", 0.3f, false, 0.0f, 0.0f);
+}
+
+void DB_Data::OnSharePlayer(AFSDPlayerState* PlayerState) {
+    OnShareEvent();
+}
+
+void DB_Data::OnShareClass(TSubclassOf<APlayerCharacter> NewCharacter) {
+    OnShareEvent();
+}
+
+// The game instance outlives the level.
+void DB_Data::ReceiveEndPlay(TEnum<EEndPlayReason> EndPlayReason) {
+    UFSDGameInstance* GI = UGameFunctionLibrary::GetFSDGameInstance(this);
+    if (UKismetSystemLibrary::IsValid(GI)) GI->OnCharacterSelectionStop.Remove(this, &DB_Data::OnShareEvent);
+}
+
+// A link tells this machine that it is here, that its player is known now, or (on the host) that the player's code
+// came. The local player's own link: the build goes through it at once, and the events are bound again (the local
+// player state is certainly there now). On the host, HostSync follows: who has sent a build decides whether the
+// 0.1.0 table is kept up.
+void DB_Data::LinkChanged(DB_BuildShare_v2* Link) {
+    if (!UKismetSystemLibrary::IsValid(Link)) return;
+    Links.AddUnique(Link);
+    AFSDPlayerState* Local;
+    LocalPS(Local);
+    if (UKismetSystemLibrary::IsValid(Local) && Link->Player == Local) {
+        SendOwn();
+        UKismetSystemLibrary::K2_SetTimer(this, "ShareCheck", 0.3f, false, 0.0f, 0.0f);
+    } else if (UKismetSystemLibrary::IsServer(this)) {
+        OnShareEvent();
+    }
+}
+
+// The local player's build into their own link, when it is not there already. The host writes it; a client sends it
+// (Server_SetCode) once per code and link, and only through a link it owns: a server RPC needs the owner's
+// connection, so while the link does not name its owner yet this is tried again every second, at most 20 times.
+void DB_Data::SendOwn() {
+    AFSDPlayerState* Local;
+    LocalPS(Local);
+    if (!UKismetSystemLibrary::IsValid(Local)) return;
+    DB_BuildShare_v2* Link = nullptr;
+    for (DB_BuildShare_v2* Each : Links)
+        if (UKismetSystemLibrary::IsValid(Each) && Each->Player == Local) Link = Each;
+    if (Link == nullptr) return;
     FString Own;
-    if (!UKismetSystemLibrary::IsServer(this)) {
-        if (!UKismetSystemLibrary::IsValid(Local)) return;
-        APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-        for (DB_BuildShare_v2* Link : Links) {
-            if (UKismetSystemLibrary::IsValid(Link) && Link->Player == Local && Link->GetOwner() == PC) {
-                LocalCode(Own);
-                if (UKismetStringLibrary::Len(Own) > 0 && (Own != SentCode || Link->Code != Own)) {
-                    Link->Server_SetCode(Own);
-                    SentCode = Own;
-                }
-            }
+    LocalCode(Own);
+    if (UKismetStringLibrary::Len(Own) == 0) return;
+    if (UKismetSystemLibrary::IsServer(this)) {
+        if (Link->Code == Own) return;
+        Link->PerksKnown = true;
+        Link->FromPlayer = true;
+        Link->Code = Own;
+        Link->ForceNetUpdate();
+        return;
+    }
+    if (Link->GetOwner() != UGameplayStatics::GetPlayerController(this, 0)) {
+        if (OwnerTries < 20) {
+            OwnerTries += 1;
+            UKismetSystemLibrary::K2_SetTimer(this, "SendOwn", 1.0f, false, 0.0f, 0.0f);
         }
         return;
     }
+    if (Own == SentCode && Link == SentLink) return;
+    SentCode = Own;
+    SentLink = Link;
+    OwnerTries = 0;
+    Link->Server_SetCode(Own);
+}
+
+// A client: SendOwn. The host, with company: one link per player, owned by the player's controller so the player can
+// send through it; a link starts empty and stays so for a player without the mod (readers then use what the game
+// replicates and the 0.1.0 table, as before). Links of players who left go. The 0.1.0 perk table collects only while
+// some other player has sent no build (a player without the mod, or on 0.1.0: the table is what clients read for
+// them). Alone: no links and the table rests. Then the host's own build.
+void DB_Data::HostSync() {
+    if (!UKismetSystemLibrary::IsServer(this)) {
+        SendOwn();
+        return;
+    }
+    AFSDPlayerState* Local;
+    LocalPS(Local);
+    bool Need = false;
     AGameStateBase* State = UGameplayStatics::GetGameState(this);
-    if (!UKismetSystemLibrary::IsValid(State)) return;
-    FTransform Origin = UKismetMathLibrary::MakeTransform(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f),
-                                                          FVector(1.0f, 1.0f, 1.0f));
-    TArray<APlayerState*> Players = State->PlayerArray;
-    for (APlayerState* Each : Players) {
-        AFSDPlayerState* PS = Cast<AFSDPlayerState>(Each);
-        if (PS == nullptr) continue;
-        DB_BuildShare_v2* Link = nullptr;
-        for (DB_BuildShare_v2* Other : Links) {
-            if (UKismetSystemLibrary::IsValid(Other) && Other->Player == PS) Link = Other;
-        }
-        AActor* Controller = PS->GetOwner();
-        if (Link == nullptr) {
-            Link = (DB_BuildShare_v2*)UGameplayStatics::BeginDeferredActorSpawnFromClass(
-                this, DB_BuildShare_v2::StaticClass(), Origin, ESpawnActorCollisionHandlingMethod::AlwaysSpawn, Controller);
-            Link->Player = PS;
-            UGameplayStatics::FinishSpawningActor(Link, Origin);
-            Links.Add(Link);
-        } else if (UKismetSystemLibrary::IsValid(Controller) && Link->GetOwner() != Controller) {
-            Link->SetOwner(Controller);
-        }
-        if (PS == Local) {
-            LocalCode(Own);
-            if (Link->Code != Own) Link->Code = Own;
-            Link->PerksKnown = true;
-            Link->FromPlayer = true;
-        } else if (!Link->FromPlayer) {
-            TArray<UPerkAsset*> Perks;
-            TArray<int32> Ranks;
-            int32 PerkState;
-            CodeOf(PS, Own);
-            PerksOf(PS, Perks, Ranks, PerkState);
-            if (Link->Code != Own) Link->Code = Own;
-            Link->PerksKnown = PerkState == 0;
+    if (UKismetSystemLibrary::IsValid(State) && State->PlayerArray.Num() > 1) {
+        FTransform Origin = UKismetMathLibrary::MakeTransform(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f),
+                                                              FVector(1.0f, 1.0f, 1.0f));
+        TArray<APlayerState*> Players = State->PlayerArray;
+        for (APlayerState* Each : Players) {
+            AFSDPlayerState* PS = Cast<AFSDPlayerState>(Each);
+            if (PS == nullptr) continue;
+            DB_BuildShare_v2* Link = nullptr;
+            for (DB_BuildShare_v2* Other : Links)
+                if (UKismetSystemLibrary::IsValid(Other) && Other->Player == PS) Link = Other;
+            AActor* Controller = PS->GetOwner();
+            if (Link == nullptr) {
+                Link = (DB_BuildShare_v2*)UGameplayStatics::BeginDeferredActorSpawnFromClass(
+                    this, DB_BuildShare_v2::StaticClass(), Origin, ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
+                    Controller);
+                Link->Player = PS;
+                UGameplayStatics::FinishSpawningActor(Link, Origin);
+                Links.AddUnique(Link);
+            } else if (UKismetSystemLibrary::IsValid(Controller) && Link->GetOwner() != Controller) {
+                Link->SetOwner(Controller);
+                Link->ForceNetUpdate();
+            }
+            if (PS != Local && UKismetStringLibrary::Len(Link->Code) == 0) Need = true;
         }
     }
+    TArray<DB_BuildShare_v2*> Keep;
     for (DB_BuildShare_v2* Link : Links) {
-        if (UKismetSystemLibrary::IsValid(Link) && !UKismetSystemLibrary::IsValid(Link->Player)) Link->K2_DestroyActor();
+        if (!UKismetSystemLibrary::IsValid(Link)) continue;
+        if (UKismetSystemLibrary::IsValid(Link->Player)) {
+            Keep.Add(Link);
+        } else {
+            Link->K2_DestroyActor();
+        }
     }
+    Links = Keep;
+    DB_PerkShare_v1* Table = (DB_PerkShare_v1*)UGameplayStatics::GetActorOfClass(this, DB_PerkShare_v1::StaticClass());
+    if (UKismetSystemLibrary::IsValid(Table)) {
+        if (!Need) {
+            UKismetSystemLibrary::K2_ClearTimer(Table, "Collect");
+        } else if (!UKismetSystemLibrary::K2_IsTimerActive(Table, "Collect")) {
+            UKismetSystemLibrary::K2_SetTimer(Table, "Collect", 3.0f, true, 0.0f, 0.0f);
+            Table->Collect();
+        }
+    }
+    SendOwn();
 }

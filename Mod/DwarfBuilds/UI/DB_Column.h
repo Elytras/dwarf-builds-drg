@@ -93,6 +93,7 @@ public:
     int32 FpLoadout;
     FString FpLink;
     bool FpHost;
+    bool FpYou;
     bool FpHex;
     float FpAt;
     TArray<FItemUpgradeSelection> FpSels;
@@ -101,6 +102,8 @@ public:
     TArray<int32> FpShareIds;
     TArray<UPerkAsset*> FpSharePerks;
     TArray<int32> FpShareRanks;
+    TArray<UPlayerCharacterID*> FpShareClasses;
+    TArray<int32> FpShareCounts;
     DB_Column() {
         Root->WidthOverride = 418.0f;
         Root->HeightOverride = 990.0f;

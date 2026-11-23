@@ -99,6 +99,7 @@ public:
     TArray<UItemUpgrade*> TierOpts;
     UItemID* CardItem;
     UOverclockUpgrade* CardOc;
+    bool CardOcUnknown;   // the code names an overclock this game does not have (Show's UnknownOc)
     FText OcTitle;
     FText OcCategory;
     FText OcBody;
@@ -516,7 +517,7 @@ public:
     }
     void BndEvt__DB_WeaponCard_OcBtn_K2Node_ComponentBoundEvent_1_OnButtonHoverEvent__DelegateSignature();
     void BndEvt__DB_WeaponCard_NameBtn_K2Node_ComponentBoundEvent_0_OnButtonHoverEvent__DelegateSignature();
-    void Show(UItemID* Item, TArray<int32>& Choices, UOverclockUpgrade* Overclock, FString Digits);
+    void Show(UItemID* Item, TArray<int32>& Choices, UOverclockUpgrade* Overclock, FString Digits, bool UnknownOc);
     void EnsureCells();
     void ShowOverclock();
     void ShowGrid(UItemID* GridItem, TArray<int32>& GridChoices);

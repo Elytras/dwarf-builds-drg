@@ -372,8 +372,6 @@ void DB_Window::Open() {
     bool CallFunc_IsValid_ReturnValue;
     RpPage = -1;
     FTimerHandle CallFunc_K2_SetTimer_ReturnValue;
-    FKey CallFunc_OpenKey_Key;
-    FText CallFunc_TextToUpper_ReturnValue;
     TArray<DB_Column*> K2Node_MakeArray_Array;
     CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Data);
     if (CallFunc_IsValid_ReturnValue) {
@@ -402,9 +400,6 @@ void DB_Window::Open() {
         UKismetSystemLibrary::K2_ClearTimer(this, "TimerRefresh");
         CallFunc_K2_SetTimer_ReturnValue = UKismetSystemLibrary::K2_SetTimer(this, "TimerRefresh", 1.0f, true, 0.0f, 0.0f);
         SetKeyboardFocus();
-        Data->OpenKey(CallFunc_OpenKey_Key);
-        CallFunc_TextToUpper_ReturnValue = UKismetTextLibrary::TextToUpper(UKismetInputLibrary::Key_GetDisplayName(CallFunc_OpenKey_Key));
-        KeyText->SetText(CallFunc_TextToUpper_ReturnValue);
         return;
     } else {
         return;
@@ -1180,64 +1175,21 @@ void DB_Window::PublishMine() {
     }
 }
 
+// Escape closes the take dialog, else the window; E flips "more info" unless the code box is being typed in.
 FEventReply DB_Window::OnKeyUp(FGeometry MyGeometry, FKeyEvent InKeyEvent) {
-    bool CallFunc_BooleanOR_ReturnValue;
-    bool CallFunc_EqualEqual_KeyKey_ReturnValue;
-    bool CallFunc_EqualEqual_KeyKey_ReturnValue_1;
-    bool CallFunc_EqualEqual_KeyKey_ReturnValue_2;
-    FKey CallFunc_GetKey_ReturnValue;
-    FEventReply CallFunc_Handled_ReturnValue;
-    bool CallFunc_HasFocusedDescendants_ReturnValue;
-    bool CallFunc_HasKeyboardFocus_ReturnValue;
-    bool CallFunc_IsValid_ReturnValue;
-    FKey CallFunc_OpenKey_Key;
-    FEventReply CallFunc_Unhandled_ReturnValue;
-    FEventReply K2Node_Select_Default;
-    Data->OpenKey(CallFunc_OpenKey_Key);
-    CallFunc_GetKey_ReturnValue = UKismetInputLibrary::GetKey(InKeyEvent);
-    CallFunc_EqualEqual_KeyKey_ReturnValue_2 = CallFunc_GetKey_ReturnValue == CallFunc_OpenKey_Key;
-    if (CallFunc_EqualEqual_KeyKey_ReturnValue_2) {
-        CallFunc_HasFocusedDescendants_ReturnValue = CodeBox->HasFocusedDescendants();
-        CallFunc_HasKeyboardFocus_ReturnValue = CodeBox->HasKeyboardFocus();
-        CallFunc_BooleanOR_ReturnValue = CallFunc_HasKeyboardFocus_ReturnValue || CallFunc_HasFocusedDescendants_ReturnValue;
-        if (!CallFunc_BooleanOR_ReturnValue) {
+    FKey Key = UKismetInputLibrary::GetKey(InKeyEvent);
+    bool Typing = CodeBox->HasKeyboardFocus() || CodeBox->HasFocusedDescendants();
+    if (Key == FKey("Escape")) {
+        if (TakeOpen) {
+            CloseTake();
+        } else {
             Dismiss();
         }
-    } else {
-        CallFunc_GetKey_ReturnValue = UKismetInputLibrary::GetKey(InKeyEvent);
-        CallFunc_EqualEqual_KeyKey_ReturnValue_1 = CallFunc_GetKey_ReturnValue == FKey("Escape");
-        if (CallFunc_EqualEqual_KeyKey_ReturnValue_1) {
-            if (TakeOpen) {
-                CloseTake();
-            } else {
-                Dismiss();
-            }
-        } else {
-            CallFunc_GetKey_ReturnValue = UKismetInputLibrary::GetKey(InKeyEvent);
-            CallFunc_EqualEqual_KeyKey_ReturnValue = CallFunc_GetKey_ReturnValue == FKey("E");
-            if (CallFunc_EqualEqual_KeyKey_ReturnValue) {
-                CallFunc_HasFocusedDescendants_ReturnValue = CodeBox->HasFocusedDescendants();
-                CallFunc_HasKeyboardFocus_ReturnValue = CodeBox->HasKeyboardFocus();
-                CallFunc_BooleanOR_ReturnValue = CallFunc_HasKeyboardFocus_ReturnValue || CallFunc_HasFocusedDescendants_ReturnValue;
-                if (!CallFunc_BooleanOR_ReturnValue) {
-                    CallFunc_IsValid_ReturnValue = UKismetSystemLibrary::IsValid(Data);
-                    if (CallFunc_IsValid_ReturnValue) {
-                        Data->ToggleMoreInfo();
-                    }
-                }
-            }
-        }
+    } else if (Key == FKey("E") && !Typing && UKismetSystemLibrary::IsValid(Data)) {
+        Data->ToggleMoreInfo();
     }
-    CallFunc_GetKey_ReturnValue = UKismetInputLibrary::GetKey(InKeyEvent);
-    CallFunc_EqualEqual_KeyKey_ReturnValue = CallFunc_GetKey_ReturnValue == FKey("E");
-    CallFunc_EqualEqual_KeyKey_ReturnValue_1 = CallFunc_GetKey_ReturnValue == FKey("Escape");
-    CallFunc_Unhandled_ReturnValue = UWidgetBlueprintLibrary::Unhandled();
-    CallFunc_Handled_ReturnValue = UWidgetBlueprintLibrary::Handled();
-    CallFunc_HasFocusedDescendants_ReturnValue = CodeBox->HasFocusedDescendants();
-    CallFunc_HasKeyboardFocus_ReturnValue = CodeBox->HasKeyboardFocus();
-    CallFunc_EqualEqual_KeyKey_ReturnValue_2 = CallFunc_GetKey_ReturnValue == CallFunc_OpenKey_Key;
-    CallFunc_BooleanOR_ReturnValue = CallFunc_HasKeyboardFocus_ReturnValue || CallFunc_HasFocusedDescendants_ReturnValue;
-    return (CallFunc_EqualEqual_KeyKey_ReturnValue_2 || CallFunc_EqualEqual_KeyKey_ReturnValue_1 || CallFunc_EqualEqual_KeyKey_ReturnValue || CallFunc_BooleanOR_ReturnValue) == false ? CallFunc_Unhandled_ReturnValue : (CallFunc_EqualEqual_KeyKey_ReturnValue_2 || CallFunc_EqualEqual_KeyKey_ReturnValue_1 || CallFunc_EqualEqual_KeyKey_ReturnValue || CallFunc_BooleanOR_ReturnValue) == true ? CallFunc_Handled_ReturnValue : K2Node_Select_Default;
+    if (Key == FKey("Escape") || Key == FKey("E") || Typing) return UWidgetBlueprintLibrary::Handled();
+    return UWidgetBlueprintLibrary::Unhandled();
 }
 
 FEventReply DB_Window::OnKeyDown(FGeometry MyGeometry, FKeyEvent InKeyEvent) {

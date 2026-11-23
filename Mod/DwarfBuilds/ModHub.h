@@ -1,6 +1,8 @@
 ﻿// The Mod Hub interfaces Dwarf Builds implements and calls, as Mod Hub ships them at /Game/_ModHub (each a Blueprint
 // interface, IHubMod_C and so on). They are declared here, not built: Mod Hub, or a hub that embeds the same
-// interfaces, provides them in game. Without one, DB_Mod never loads DB_Hub, so nothing here is needed.
+// interfaces, provides them in game. Without one, DB_Mod never loads DB_Hub, so nothing here is needed. UE_COOKED
+// makes AssetGen import them rather than cook them: a copy in this pak would stand in for the hub's own, and DB_Mod's
+// check for a hub would always pass.
 #pragma once
 #include "UeApi/UeMeta.h"
 #include "UeApi/Slate.h"
@@ -23,7 +25,7 @@ public:
     virtual void GetHub(TScriptInterface<IHub>& Hub);
     virtual TScriptInterface<IHubDataSource> GetDataSource();
 private:
-    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; };
+    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; UE_COOKED; };
 };
 
 // A mod's saved settings, as the hub's own settings pages edit them.
@@ -33,7 +35,7 @@ public:
     virtual void SetFloatValue(FGuid SaveID, float Value);
     virtual void save();
 private:
-    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; };
+    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; UE_COOKED; };
 };
 
 // The hub: what a registered mod may ask of it.
@@ -53,7 +55,7 @@ public:
     virtual void EnableGameplayFeatures();
     virtual void CloseHub();
 private:
-    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; };
+    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; UE_COOKED; };
 };
 
 // A mod the hub lists: an actor, which the hub finds by this interface.
@@ -70,7 +72,7 @@ public:
     virtual void GetModInfo(FText& ModName, FText& ModAuthor, FText& ModVersion);
     virtual void GetDataSource(TScriptInterface<IHubDataSource>& DataSource);
 private:
-    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; };
+    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; UE_COOKED; };
 };
 
 // One page of a mod in the hub: a widget.
@@ -83,7 +85,7 @@ public:
     virtual void GetContainerMode(bool& bStretchToContainer);
     virtual void BeginHubPage(const TScriptInterface<IHubContext>& HubContext);
 private:
-    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; };
+    struct UeMarkers { static constexpr bool UeInterfaceMeta = true; UE_COOKED; };
 };
 
 }}   // namespace Game::_ModHub

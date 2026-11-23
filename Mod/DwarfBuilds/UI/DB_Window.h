@@ -1473,7 +1473,7 @@ public:
         KeyText_Slot->Padding.Bottom = 0.0f;
         KeyText_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Center;
         KeyText_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Center;
-        KeyText->Text = "B";
+        KeyText->Text = "ESC";
         KeyText->Font.FontObject = &Assets::Art::Fonts::Carbon;
         KeyText->Font.TypefaceFontName = "2. Bold";
         KeyText->Font.Size = 15;

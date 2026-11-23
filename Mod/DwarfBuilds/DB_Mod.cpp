@@ -1,15 +1,16 @@
-﻿// DB_Mod: spawning the mod's actors, the open key, and finding the class selection screen.
+﻿// DB_Mod: spawning the mod's actors, opening the window, and finding the class selection screen.
 #include "DwarfBuilds.h"
 
 namespace {
 const float PollSeconds = 0.5f;
-const float PollWindow = 60.0f;   // how long SelectPoll looks after BeginPlay or a selection start
-const float ArmedFor = 1.5f;      // a release this long after the press no longer opens the window
+const float PollWindow = 60.0f;   // how long SelectPoll looks after BeginPlay or a selection start,
+const float OpenWindowFor = 3.0f; // and after a game window opens (the selection screen opens like one)
+const float StopCheck = 2.0f;     // one look this long after a selection stop: a mission's screen is gone by then
 const int32 WindowLayer = 60;
 }
 
 // First we keep one DB_Mod per world: InitSpacerig and InitCave can both be spawned, and a mod list may hold the
-// pak twice. Then the world's actors, then input once the local player controller exists.
+// pak twice. Then the world's actors, then the selection events once the local player controller exists.
 void DB_Mod::ReceiveBeginPlay() {
     TArray<AActor*> Mods;
     UGameplayStatics::GetAllActorsOfClass(this, DB_Mod::StaticClass(), Mods);
@@ -44,13 +45,14 @@ void DB_Mod::ReceiveBeginPlay() {
 
     while (!UKismetSystemLibrary::IsValid(UGameplayStatics::GetPlayerController(this, 0)))
         UKismetSystemLibrary::Delay(this, 0.5f);
-    EnableInput(UGameplayStatics::GetPlayerController(this, 0));
     UFSDGameInstance* GI = UGameFunctionLibrary::GetFSDGameInstance(this);
     if (UKismetSystemLibrary::IsValid(GI)) {
         GI->OnCharacterSelectionStart.Add(this, &DB_Mod::OnSelectionStart);
         GI->OnCharacterSelectionStop.Add(this, &DB_Mod::OnSelectionStop);
     }
-    StartPoll();
+    UWindowManager* WM = UGameFunctionLibrary::GetWindowManager(this);
+    if (UKismetSystemLibrary::IsValid(WM)) WM->OnFirstWindowOpened.Add(this, &DB_Mod::OnWindowOpened);
+    StartPoll(PollWindow);
 }
 
 // The game instance outlives the level: unbind from it, and leave the screen so the old one can be freed.
@@ -60,45 +62,21 @@ void DB_Mod::ReceiveEndPlay(TEnum<EEndPlayReason> EndPlayReason) {
         GI->OnCharacterSelectionStart.Remove(this, &DB_Mod::OnSelectionStart);
         GI->OnCharacterSelectionStop.Remove(this, &DB_Mod::OnSelectionStop);
     }
+    UWindowManager* WM = UGameFunctionLibrary::GetWindowManager(this);
+    if (UKismetSystemLibrary::IsValid(WM)) WM->OnFirstWindowOpened.Remove(this, &DB_Mod::OnWindowOpened);
     UKismetSystemLibrary::K2_ClearTimer(this, "SelectPoll");
     if (UKismetSystemLibrary::IsValid(SelectUI)) SelectUI->Detach();
 }
 
-bool DB_Mod::IsOpenKey(FKey Key) {
+// From the hub page's OPEN button. Through the game's window manager when it has one: the hub is a window of its own
+// there, so ours goes on top and closing ours shows the hub again. Else by hand. Open already: nothing.
+void DB_Mod::OpenWindow() {
     DB_Data* Data = (DB_Data*)UGameplayStatics::GetActorOfClass(this, DB_Data::StaticClass());
-    if (!UKismetSystemLibrary::IsValid(Data)) return false;
-    FKey Open;
-    Data->OpenKey(Open);
-    return Key == Open;
-}
-
-// A press arms the key unless our window is on top (then the release closes it).
-void DB_Mod::KeyDown(FKey Key) {
-    if (!IsOpenKey(Key)) return;
-    KeyArmed = Cast<DB_Window>(UGameFunctionLibrary::GetTopWindow(this)) == nullptr;
-    KeyArmedAt = UGameplayStatics::GetRealTimeSeconds(this);
-}
-
-void DB_Mod::KeyUp(FKey Key) {
-    if (!IsOpenKey(Key)) return;
-    DB_Window* Top = Cast<DB_Window>(UGameFunctionLibrary::GetTopWindow(this));
-    if (Top != nullptr) {
-        Top->Dismiss();
-        KeyArmed = false;
-        return;
-    }
-    bool Armed = KeyArmed && UGameplayStatics::GetRealTimeSeconds(this) - KeyArmedAt < ArmedFor;
-    KeyArmed = false;
-    if (Armed) ToggleWindow();
-}
-
-// Through the game's window manager when it has one and no window of its own is open; else by hand, which a second
-// press closes again.
-void DB_Mod::ToggleWindow() {
-    DB_Data* Data = (DB_Data*)UGameplayStatics::GetActorOfClass(this, DB_Data::StaticClass());
+    TArray<UUserWidget*> Shown;
+    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Shown, DB_Window::StaticClass(), true);
+    if (Shown.Num() > 0) return;
     UWindowManager* WM = UGameFunctionLibrary::GetWindowManager(this);
     if (UKismetSystemLibrary::IsValid(WM)) {
-        if (WM->AnyWindowsOpen()) return;
         DB_Window* Win = Cast<DB_Window>(WM->OpenWindowFromClass(DB_Window::StaticClass(), WindowLayer, true));
         if (Win != nullptr) {
             Win->Manual = false;
@@ -106,12 +84,6 @@ void DB_Mod::ToggleWindow() {
             Win->Open();
             return;
         }
-    }
-    TArray<UUserWidget*> Shown;
-    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Shown, DB_Window::StaticClass(), true);
-    if (Shown.Num() > 0) {
-        Cast<DB_Window>(Shown[0])->Dismiss();
-        return;
     }
     APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
     DB_Window* Win = Cast<DB_Window>(UWidgetBlueprintLibrary::Create(this, DB_Window::StaticClass(), PC));
@@ -127,15 +99,24 @@ void DB_Mod::ToggleWindow() {
 // Only the selection proper (not the forge, the customization or the end screen) shows the class selection screen.
 void DB_Mod::OnSelectionStart(ECharselectionCameraLocation selectionLocation) {
     if (selectionLocation != ECharselectionCameraLocation::Selection) return;
-    StartPoll();
+    StartPoll(PollWindow);
 }
 
+// The overlay stays with the screen. With no search running, one look a moment later lets go of a mission's screen,
+// which has left the UI by then.
 void DB_Mod::OnSelectionStop() {
     if (UKismetSystemLibrary::IsValid(SelectUI)) SelectUI->OnStop();
+    if (!UKismetSystemLibrary::K2_IsTimerActive(this, "SelectPoll"))
+        UKismetSystemLibrary::K2_SetTimer(this, "SelectPoll", StopCheck, false, 0.0f, 0.0f);
 }
 
-void DB_Mod::StartPoll() {
-    PollUntil = UGameplayStatics::GetRealTimeSeconds(this) + PollWindow;
+void DB_Mod::OnWindowOpened() {
+    StartPoll(OpenWindowFor);
+}
+
+// A longer search that is already running keeps its end.
+void DB_Mod::StartPoll(float Seconds) {
+    PollUntil = UKismetMathLibrary::FMax(PollUntil, UGameplayStatics::GetRealTimeSeconds(this) + Seconds);
     UKismetSystemLibrary::K2_ClearTimer(this, "SelectPoll");
     UKismetSystemLibrary::K2_SetTimer(this, "SelectPoll", PollSeconds, true, 0.0f, 0.0f);
     SelectPoll();
@@ -194,12 +175,18 @@ void DB_Mod::TryShow() {
                        Layer);
 }
 
-// ScreenTmp and CanvasTmp: the class selection screen and its full-screen canvas, or None. First every anchor widget
-// whose owner is a live selection screen (in the viewport or in a parent), its parent being the canvas; a shown
-// screen wins over a hidden one. Without a canvas, a selection screen in the viewport, for the viewport fallback.
+// ScreenTmp and CanvasTmp: the class selection screen and its full-screen canvas, or None. No selection screen widget
+// in this world at all: nothing to find, after this one scan (the usual case while the poll waits). Else every anchor
+// widget whose owner is a live selection screen (in the viewport or in a parent), its parent being the canvas; a
+// shown screen wins over a hidden one. Without a canvas, a selection screen in the viewport, for the viewport
+// fallback, taken from the first scan.
 void DB_Mod::FindScreen() {
     ScreenTmp = nullptr;
     CanvasTmp = nullptr;
+    if (!UKismetSystemLibrary::IsValidClass(ScreenClass)) return;
+    TArray<UUserWidget*> Screens;
+    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Screens, ScreenClass, false);
+    if (Screens.Num() == 0) return;
     if (UKismetSystemLibrary::IsValidClass(AnchorClass)) {
         TArray<UUserWidget*> Anchors;
         UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Anchors, AnchorClass, false);
@@ -218,9 +205,8 @@ void DB_Mod::FindScreen() {
             }
         }
     }
-    if (UKismetSystemLibrary::IsValid(ScreenTmp) || !UKismetSystemLibrary::IsValidClass(ScreenClass)) return;
-    TArray<UUserWidget*> Screens;
-    UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Screens, ScreenClass, true);
+    if (UKismetSystemLibrary::IsValid(ScreenTmp)) return;
     for (UUserWidget* Screen : Screens)
-        if (!UKismetSystemLibrary::IsValid(ScreenTmp) || Screen->IsVisible()) ScreenTmp = Screen;
+        if (Screen->IsInViewport() && (!UKismetSystemLibrary::IsValid(ScreenTmp) || Screen->IsVisible()))
+            ScreenTmp = Screen;
 }

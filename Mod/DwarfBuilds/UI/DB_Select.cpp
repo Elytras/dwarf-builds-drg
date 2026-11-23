@@ -5,7 +5,7 @@ namespace UI {
 
 // Runs only while the overlay is drawn, that is while the selection screen shows. It refreshes the overlay once a
 // second (Update), refits it when the screen's size changes, and redraws your column at once when your class or
-// loadout changes. A gap since the last frame means the screen was hidden and is back: that counts as just shown.
+// loadout changes, and tells DB_Data, which sends the new build to the others. A gap since the last frame means the screen was hidden and is back: that counts as just shown.
 void DB_Select::Tick(FGeometry MyGeometry, float InDeltaTime) {
     float Now = UGameplayStatics::GetRealTimeSeconds(this);
     if (Now - LastTick > 0.3f) {
@@ -36,6 +36,7 @@ void DB_Select::Tick(FGeometry MyGeometry, float InDeltaTime) {
     OwnClass = Class;
     OwnLoadout = Loadout;
     Own->ShowPlayer(PS);
+    if (UKismetSystemLibrary::IsValid(Data)) UKismetSystemLibrary::K2_SetTimer(Data, "HostSync", 0.3f, false, 0.0f, 0.0f);
 }
 
 void DB_Select::AttachTo(UUserWidget* NewScreen, UCanvasPanel* NewCanvas, DB_Data* NewData, int32 Layer) {

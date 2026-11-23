@@ -43,7 +43,7 @@ void DB_Column::BndEvt__DB_Column_TakeBtn_K2Node_ComponentBoundEvent_0_OnButtonC
 }
 
 // Whether nothing ShowPlayer shows of Player can have changed since its last call: the same player, class, name,
-// level, host flag, loadout, replicated selections, perks and stats, the same host perk table, and the hexagon
+// level, host and "you" flags, loadout, replicated selections, perks and stats, the same host perk table, and the hexagon
 // textures loaded as before. A column is also redone every FreshFor seconds, for what no input here covers (a
 // client's "waiting for the host" turning into "not available"). Records the inputs for the next call.
 bool DB_Column::SameAsLast(AFSDPlayerState* Player) {
@@ -53,12 +53,15 @@ bool DB_Column::SameAsLast(AFSDPlayerState* Player) {
     FString Name = Player->GetPlayerName();
     int32 Level = Player->GetSelectedCharacterLevel();
     bool Host = Player->bIsServer;
+    AFSDPlayerState* Local;
+    Data->LocalPS(Local);
+    bool You = Player == Local;
     bool Hex = UKismetSystemLibrary::IsValid(Data->HexBg);
     int32 Loadout = -1;
     UFSDSaveGame* Save = UGameFunctionLibrary::GetFSDSaveGame(this);
     if (UKismetSystemLibrary::IsValid(Save) && UKismetSystemLibrary::IsValid(Class))
         Loadout = Save->GetSelectedLoadoutIndex(Class);
-    bool Same = Player == FpPlayer && Class == FpClass && Name == FpName && Level == FpLevel && Host == FpHost &&
+    bool Same = Player == FpPlayer && Class == FpClass && Name == FpName && Level == FpLevel && Host == FpHost && You == FpYou &&
                 Hex == FpHex && Loadout == FpLoadout && Now - FpAt < FreshFor;
     USaveGameStateComponent* Comp = Player->SaveGameStateComponent;
     if (UKismetSystemLibrary::IsValid(Comp)) {
@@ -75,8 +78,11 @@ bool DB_Column::SameAsLast(AFSDPlayerState* Player) {
     }
     DB_PerkShare_v1* Share = Data->PerksOf_Share;
     if (UKismetSystemLibrary::IsValid(Share)) {
-        Same = Same && Share->Ids.Identical(FpShareIds) && Share->Perks.Identical(FpSharePerks) &&
-               Share->Ranks.Identical(FpShareRanks);
+        Same = Same && Share->Ids.Identical(FpShareIds) && Share->Classes.Identical(FpShareClasses) &&
+               Share->Perks.Identical(FpSharePerks) && Share->Ranks.Identical(FpShareRanks) &&
+               Share->Counts.Identical(FpShareCounts);
+        FpShareClasses = Share->Classes;
+        FpShareCounts = Share->Counts;
         FpShareIds = Share->Ids;
         FpSharePerks = Share->Perks;
         FpShareRanks = Share->Ranks;
@@ -92,6 +98,7 @@ bool DB_Column::SameAsLast(AFSDPlayerState* Player) {
         FpName = Name;
         FpLevel = Level;
         FpHost = Host;
+        FpYou = You;
         FpHex = Hex;
         FpLoadout = Loadout;
         FpAt = Now;
@@ -348,23 +355,29 @@ void DB_Column::ShowBuild(FString BuildCode) {
     UOverclockUpgrade* CallFunc_DecodeSlot_Overclock_3;
     UOverclockUpgrade* CallFunc_DecodeSlot_Overclock_4;
     UOverclockUpgrade* CallFunc_DecodeSlot_Overclock_5;
+    bool CallFunc_DecodeSlot_UnknownOc;
+    bool CallFunc_DecodeSlot_UnknownOc_1;
+    bool CallFunc_DecodeSlot_UnknownOc_2;
+    bool CallFunc_DecodeSlot_UnknownOc_3;
+    bool CallFunc_DecodeSlot_UnknownOc_4;
+    bool CallFunc_DecodeSlot_UnknownOc_5;
     UItemID* K2Node_Select_Default;
     UItemID* K2Node_Select_Default_1;
     UItemID* K2Node_Select_Default_2;
     UItemID* K2Node_Select_Default_3;
     UItemID* K2Node_Select_Default_4;
     UItemID* K2Node_Select_Default_5;
-    Data->DecodeSlot(BuildCode, 0, CallFunc_DecodeSlot_Item_5, CallFunc_DecodeSlot_Choices_5, CallFunc_DecodeSlot_Overclock_5, CallFunc_DecodeSlot_Digits_5, CallFunc_DecodeSlot_Found_5);
-    Card1->Show(CallFunc_DecodeSlot_Found_5 == false ? nullptr : CallFunc_DecodeSlot_Found_5 == true ? CallFunc_DecodeSlot_Item_5 : K2Node_Select_Default_5, CallFunc_DecodeSlot_Choices_5, CallFunc_DecodeSlot_Overclock_5, "");
-    Data->DecodeSlot(BuildCode, 1, CallFunc_DecodeSlot_Item_4, CallFunc_DecodeSlot_Choices_4, CallFunc_DecodeSlot_Overclock_4, CallFunc_DecodeSlot_Digits_4, CallFunc_DecodeSlot_Found_4);
-    Card2->Show(CallFunc_DecodeSlot_Found_4 == false ? nullptr : CallFunc_DecodeSlot_Found_4 == true ? CallFunc_DecodeSlot_Item_4 : K2Node_Select_Default_4, CallFunc_DecodeSlot_Choices_4, CallFunc_DecodeSlot_Overclock_4, "");
-    Data->DecodeSlot(BuildCode, 2, CallFunc_DecodeSlot_Item_3, CallFunc_DecodeSlot_Choices_3, CallFunc_DecodeSlot_Overclock_3, CallFunc_DecodeSlot_Digits_3, CallFunc_DecodeSlot_Found_3);
+    Data->DecodeSlot(BuildCode, 0, CallFunc_DecodeSlot_Item_5, CallFunc_DecodeSlot_Choices_5, CallFunc_DecodeSlot_Overclock_5, CallFunc_DecodeSlot_Digits_5, CallFunc_DecodeSlot_Found_5, CallFunc_DecodeSlot_UnknownOc_5);
+    Card1->Show(CallFunc_DecodeSlot_Found_5 == false ? nullptr : CallFunc_DecodeSlot_Found_5 == true ? CallFunc_DecodeSlot_Item_5 : K2Node_Select_Default_5, CallFunc_DecodeSlot_Choices_5, CallFunc_DecodeSlot_Overclock_5, "", CallFunc_DecodeSlot_UnknownOc_5);
+    Data->DecodeSlot(BuildCode, 1, CallFunc_DecodeSlot_Item_4, CallFunc_DecodeSlot_Choices_4, CallFunc_DecodeSlot_Overclock_4, CallFunc_DecodeSlot_Digits_4, CallFunc_DecodeSlot_Found_4, CallFunc_DecodeSlot_UnknownOc_4);
+    Card2->Show(CallFunc_DecodeSlot_Found_4 == false ? nullptr : CallFunc_DecodeSlot_Found_4 == true ? CallFunc_DecodeSlot_Item_4 : K2Node_Select_Default_4, CallFunc_DecodeSlot_Choices_4, CallFunc_DecodeSlot_Overclock_4, "", CallFunc_DecodeSlot_UnknownOc_4);
+    Data->DecodeSlot(BuildCode, 2, CallFunc_DecodeSlot_Item_3, CallFunc_DecodeSlot_Choices_3, CallFunc_DecodeSlot_Overclock_3, CallFunc_DecodeSlot_Digits_3, CallFunc_DecodeSlot_Found_3, CallFunc_DecodeSlot_UnknownOc_3);
     Gear1->Show("TRAVERSAL", CallFunc_DecodeSlot_Found_3 == false ? nullptr : CallFunc_DecodeSlot_Found_3 == true ? CallFunc_DecodeSlot_Item_3 : K2Node_Select_Default_3, CallFunc_DecodeSlot_Choices_3);
-    Data->DecodeSlot(BuildCode, 3, CallFunc_DecodeSlot_Item_2, CallFunc_DecodeSlot_Choices_2, CallFunc_DecodeSlot_Overclock_2, CallFunc_DecodeSlot_Digits_2, CallFunc_DecodeSlot_Found_2);
+    Data->DecodeSlot(BuildCode, 3, CallFunc_DecodeSlot_Item_2, CallFunc_DecodeSlot_Choices_2, CallFunc_DecodeSlot_Overclock_2, CallFunc_DecodeSlot_Digits_2, CallFunc_DecodeSlot_Found_2, CallFunc_DecodeSlot_UnknownOc_2);
     Gear2->Show("SUPPORT", CallFunc_DecodeSlot_Found_2 == false ? nullptr : CallFunc_DecodeSlot_Found_2 == true ? CallFunc_DecodeSlot_Item_2 : K2Node_Select_Default_2, CallFunc_DecodeSlot_Choices_2);
-    Data->DecodeSlot(BuildCode, 4, CallFunc_DecodeSlot_Item_1, CallFunc_DecodeSlot_Choices_1, CallFunc_DecodeSlot_Overclock_1, CallFunc_DecodeSlot_Digits_1, CallFunc_DecodeSlot_Found_1);
+    Data->DecodeSlot(BuildCode, 4, CallFunc_DecodeSlot_Item_1, CallFunc_DecodeSlot_Choices_1, CallFunc_DecodeSlot_Overclock_1, CallFunc_DecodeSlot_Digits_1, CallFunc_DecodeSlot_Found_1, CallFunc_DecodeSlot_UnknownOc_1);
     Gear3->Show("ARMOR", CallFunc_DecodeSlot_Found_1 == false ? nullptr : CallFunc_DecodeSlot_Found_1 == true ? CallFunc_DecodeSlot_Item_1 : K2Node_Select_Default_1, CallFunc_DecodeSlot_Choices_1);
-    Data->DecodeSlot(BuildCode, 5, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found);
+    Data->DecodeSlot(BuildCode, 5, CallFunc_DecodeSlot_Item, CallFunc_DecodeSlot_Choices, CallFunc_DecodeSlot_Overclock, CallFunc_DecodeSlot_Digits, CallFunc_DecodeSlot_Found, CallFunc_DecodeSlot_UnknownOc);
     Gear4->Show("GRENADE", CallFunc_DecodeSlot_Found == false ? nullptr : CallFunc_DecodeSlot_Found == true ? CallFunc_DecodeSlot_Item : K2Node_Select_Default, CallFunc_DecodeSlot_Choices);
     return;
 }

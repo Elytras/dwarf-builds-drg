@@ -1,7 +1,8 @@
-﻿// One player's build, as every client sees it. A host running this build spawns one per player (DB_Data::ShareTick),
-// owned by that player's controller, so the player's own copy of the mod can send its build (Server_SetCode). For a
-// player without the mod the host fills in what it knows itself. A new class next to DB_PerkShare_v1, which stays as
-// 0.1.0 shipped it: a client without this class (0.1.0, or no mod) drops the actor's channel and plays on.
+﻿// One player's build, as every client sees it. A host running this build spawns one per player (DB_Data::HostSync),
+// owned by that player's controller, so the player's own copy of the mod can send its build (Server_SetCode). A
+// player without the mod has an empty link. A new class next to DB_PerkShare_v1, which stays as 0.1.0 shipped it: a
+// client without this class (0.1.0, or no mod) drops the actor's channel and plays on. The replicated layout is
+// frozen (Mod/netcontract.json) and matches upstream 0.2.0's BPForge class.
 #pragma once
 #include "../DwarfBuilds.h"
 namespace Net {
@@ -10,9 +11,11 @@ public:
     DB_BuildShare_v2() {
         bAlwaysRelevant = true;
         bReplicates = true;
-        NetUpdateFrequency = 2.0f;
+        // A link changes a few times a session and every change is pushed (ForceNetUpdate).
+        NetUpdateFrequency = 0.5f;
     }
-    UE_REPLICATED(AFSDPlayerState*, Player);
+    // RepNotify: on a client the player state may come after the link.
+    UE_REPLICATED_USING(AFSDPlayerState*, Player, OnRep_Player);
     // A DB1 build code; its perk part counts only when PerksKnown.
     UE_REPLICATED(FString, Code);
     UE_REPLICATED(bool, PerksKnown);
@@ -20,5 +23,9 @@ public:
     UE_REPLICATED(bool, FromPlayer);
 
     UE_SERVER UE_RELIABLE void Server_SetCode(const FString& NewCode);
+    void OnRep_Player();
+    void Tell();
+protected:
+    void ReceiveBeginPlay();
 };
 }   // namespace Net
