@@ -2,8 +2,8 @@
 // hub's pane in EMM's own widgets and palette (BasicButtons, the hub's font and fields through IHubLook), with no
 // window, frame or title bar of its own. DB_Hub hands it to the hub as the mod's one page.
 //
-// TEAM shows a column per player (DB_Column, filtered by class past four players), side by side in a scroll box and
-// scaled down to the pane's height. BUILD CODE takes a pasted code, previews it in a column and takes it into a
+// TEAM shows a card per player (DB_Column, filtered by class past four players), as many to a row as the pane's width
+// holds, from the top, scrolled down past that. BUILD CODE takes a pasted code, previews it in a column and takes it into a
 // loadout (DB_TakeDialog over the page), or copies or publishes your own. Browse builds opens the website in the
 // Steam overlay. The page refreshes once a second while it is shown.
 #pragma once
@@ -28,8 +28,7 @@ public:
     UE_WIDGET(UBasicButton, Filter4);
     UE_WIDGET(UWidgetSwitcher, Pages);
     UE_WIDGET(UScrollBox, TeamScroll);
-    UE_WIDGET(UScaleBox, TeamFit);
-    UE_WIDGET(UHorizontalBox, TeamRow);
+    UE_WIDGET(UWrapBox, TeamWrap);
     UE_WIDGET(UHorizontalBox, CodePage);
     UE_WIDGET(UVerticalBox, CodeCol);
     UE_WIDGET(UTextBlock, CodeHint);
@@ -113,15 +112,12 @@ public:
         Pages_Slot->Size.SizeRule = ESlateSizeRule::Fill;
         Pages_Slot->Size.Value = 1.0f;
 
-        // TEAM: the columns side by side, scaled down to the pane's height, scrolled sideways when they do not fit.
+        // TEAM: the cards in rows as wide as the pane, scrolled down when they do not fit.
         UWidgetSwitcherSlot* TeamScroll_Slot = Cast<UWidgetSwitcherSlot>(Pages->AddChild(TeamScroll));
         TeamScroll_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Fill;
         TeamScroll_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Fill;
-        TeamScroll->Orientation = EOrientation::Orient_Horizontal;
-        TeamScroll->AddChild(TeamFit);
-        TeamFit->Stretch = EStretch::ScaleToFitY;
-        TeamFit->StretchDirection = EStretchDirection::DownOnly;
-        TeamFit->AddChild(TeamRow);
+        TeamScroll->AddChild(TeamWrap);
+        TeamWrap->InnerSlotPadding = FVector2D(12.0f, 12.0f);
 
         // BUILD CODE: the code and its buttons on the left, its preview on the right.
         UWidgetSwitcherSlot* CodePage_Slot = Cast<UWidgetSwitcherSlot>(Pages->AddChild(CodePage));
@@ -172,6 +168,7 @@ public:
         CopyNote->Font.Size = 16;
         UHorizontalBoxSlot* PreviewFit_Slot = Cast<UHorizontalBoxSlot>(CodePage->AddChild(PreviewFit));
         PreviewFit_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Right;
+        PreviewFit_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Top;
         PreviewFit->Stretch = EStretch::ScaleToFit;
         PreviewFit->StretchDirection = EStretchDirection::DownOnly;
         PreviewFit->AddChild(Preview);

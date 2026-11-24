@@ -77,10 +77,6 @@ public:
     DB_Tip* ItemTip;
     UItemID* ItemTipFor;
     DB_GearRow() {
-        Root->WidthOverride = 206.0f;
-        Root->HeightOverride = 188.0f;
-        Root->bOverride_WidthOverride = true;
-        Root->bOverride_HeightOverride = true;
         Root->AddChild(Bg);
         Bg->Padding.Left = 0.0f;
         Bg->Padding.Top = 0.0f;
@@ -99,8 +95,8 @@ public:
         UVerticalBoxSlot *LabelBox_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(LabelBox));
         LabelBox_Slot->Padding.Left = 12.0f;
         LabelBox_Slot->Padding.Right = 12.0f;
-        LabelBox->HeightOverride = 19.0f;
-        LabelBox->bOverride_HeightOverride = true;
+        LabelBox->MinDesiredHeight = 19.0f;
+        LabelBox->bOverride_MinDesiredHeight = true;
         USizeBoxSlot *LabelText_Slot = Cast<USizeBoxSlot>(LabelBox->AddChild(LabelText));
         LabelText_Slot->Padding.Top = 3.7f;
         LabelText_Slot->Padding.Bottom = 0.3f;
@@ -111,15 +107,16 @@ public:
         UVerticalBoxSlot *NameBox_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(NameBox));
         NameBox_Slot->Padding.Left = 12.0f;
         NameBox_Slot->Padding.Right = 12.0f;
-        NameBox->HeightOverride = 24.0f;
-        NameBox->bOverride_HeightOverride = true;
+        NameBox->MinDesiredHeight = 24.0f;
+        NameBox->bOverride_MinDesiredHeight = true;
         USizeBoxSlot *NameText_Slot = Cast<USizeBoxSlot>(NameBox->AddChild(NameText));
-        NameText_Slot->Padding.Top = -3.6f;
+        NameText_Slot->Padding.Top = 0.0f;
         NameText_Slot->Padding.Bottom = 0.6f;
         NameText->Font.FontObject = &Assets::Art::Fonts::Rift_Soft;
         NameText->Font.TypefaceFontName = "Rift Soft Bold";
         NameText->Font.Size = 17;
         NameText->Clipping = EWidgetClipping::ClipToBounds;
+        NameText->AutoWrapText = true;
         UVerticalBoxSlot *BodyBox_Slot = Cast<UVerticalBoxSlot>(Rows->AddChild(BodyBox));
         BodyBox_Slot->Padding.Left = 12.0f;
         BodyBox_Slot->Padding.Top = 2.0f;

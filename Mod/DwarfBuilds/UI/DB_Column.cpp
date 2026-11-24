@@ -271,7 +271,6 @@ void DB_Column::Clear() {
 
 void DB_Column::SetCompact(bool On) {
     Compact = On;
-    Root->SetHeightOverride(UKismetMathLibrary::SelectFloat(940.0f, 990.0f, On));
     ApplyButtons();
     return;
 }

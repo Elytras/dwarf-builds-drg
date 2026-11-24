@@ -187,8 +187,7 @@ DB_Column* DB_Window::ColumnAt(int32 Index) {
         DB_Column* Column = Cast<DB_Column>(UWidgetBlueprintLibrary::Create(this, DB_Column::StaticClass(), GetOwningPlayer()));
         Column->Window = this;
         Column->Data = Data;
-        UHorizontalBoxSlot* Column_Slot = TeamRow->AddChildToHorizontalBox(Column);
-        Column_Slot->SetPadding(FMargin(0.0f, 0.0f, 12.0f, 0.0f));
+        TeamWrap->AddChildToWrapBox(Column);
         StyleColumn(Column);
         Columns.Add(Column);
     }
