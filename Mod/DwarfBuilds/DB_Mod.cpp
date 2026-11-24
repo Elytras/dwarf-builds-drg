@@ -18,9 +18,10 @@ void DB_Mod::ReceiveBeginPlay() {
         return;
     }
 
-    // DB_Hub implements Mod Hub's interfaces, so it is loaded by path only when those are there.
-    if (UKismetSystemLibrary::IsValidClass(UKismetSystemLibrary::LoadClassAsset_Blocking(
-            UKismetSystemLibrary::MakeSoftClassPath("/Game/_ModHub/IHubMod.IHubMod_C")))) {
+    // DB_Hub implements Mod Hub's interfaces and its page is made of Elytras Mod Manager's widgets, so it is loaded
+    // by path only when EMM is there (EMM carries Mod Hub's interfaces too).
+    if (UKismetSystemLibrary::IsValidClass(UKismetSystemLibrary::LoadClassAsset_Blocking(UKismetSystemLibrary::MakeSoftClassPath(
+            "/Game/_ElytrasMods/Manager/Core/Services/Widget/IHubLook.IHubLook_C")))) {
         UClass* Hub = UKismetSystemLibrary::LoadClassAsset_Blocking(
             UKismetSystemLibrary::MakeSoftClassPath("/Game/_DwarfBuilds/DB_Hub.DB_Hub_C"));
         if (UKismetMathLibrary::ClassIsChildOf(Hub, AActor::StaticClass())) {
