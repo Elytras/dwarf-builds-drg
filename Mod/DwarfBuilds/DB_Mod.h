@@ -1,7 +1,7 @@
 ﻿// The mod's actor. The game spawns InitSpacerig on the Space Rig and InitCave in a mission; both are this class.
 // BeginPlay spawns the world's DB_Data (and, on the host, the replicated perk table DB_PerkShare_v1, and DB_Hub
-// when a Mod Hub is installed) and hooks the overlay onto the class selection screen. The builds window
-// lives in the hub's Dwarf Builds page (DB_HubPage).
+// when Elytras Mod Manager is installed) and hooks the overlay onto the class selection screen. The builds are
+// a page in EMM's hub (DB_Window).
 #pragma once
 #include "DwarfBuilds.h"
 

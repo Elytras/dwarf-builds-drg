@@ -4,7 +4,7 @@
 class DB_Hub : public AActor, public ::IHubMod {
 public:
     UE_CLASS("/Game/_DwarfBuilds/DB_Hub", "DB_Hub_C");
-    DB_HubPage* Page;
+    DB_Window* Page;   // the mod's one page, made on the first ask
     void ModHubOpened();
     void ModHubClosed();
     void ModRegistered(TScriptInterface<::IHub> Hub);

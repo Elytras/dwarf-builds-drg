@@ -92,30 +92,47 @@ commits are new. They change only `Tools/dwarfbuilds/*.py`, the spec, so each wa
 Not checked against upstream's cooked 0.2.0 pak: it is not in the local MINT cache, and the check above compares
 with its spec (`contract.py`). A lobby with the mod.io 0.2.0 on one side is still to be tried.
 
-## Living in the Mod Hub page
+## A page in Elytras Mod Manager's hub
 
 The window has no key of its own any more (no `DB_Settings.OpenKey`, no `UE_INPUT_KEY`, no key picker). A 0.1.0
 settings save still holds `OpenKey`; loading skips it.
 
 The Mod Hub API has no "menu entry" call: a hub lists every actor implementing `IHubMod` and shows the pages its
-`GetModPages` returns. `DB_Hub` is that actor (spawned by `DB_Mod` only when `/Game/_ModHub/IHubMod` exists), and
-`DB_HubPage` is its one page. Mod Hub and Elytras Mod Manager (`ue-mods/BpMods/ElytrasModManager/HUB.md`) both host
-it.
+`GetModPages` returns. `DB_Hub` is that actor and `DB_Window` its one page.
 
-The page is the window: `DB_HubPage` makes one `DB_Window` and puts it in its overlay, filling the page
-(`GetContainerMode` stretches the page over the hub's pane), as Build Inspector's page shows its builds. On
-`HubPageOpened` it hands the window this world's `DB_Data` and calls `Open` (once-a-second refresh while
-`HubShown`); `HubPageClosed` stops the refresh and hides the tips. With no `DB_Data` (not on the Space Rig or in a
-mission) a hint says Dwarf Builds is not running here.
+`DB_Window` is a native EMM page (`IHubPageWidget` and EMM's `IHubLook`), laid out to the hub's pane in EMM's widgets,
+the way EMM's own pages and DescriptorViewer's are (`ue-mods/BpMods/ElytrasModManager/HUB.md`, "IHubLook"):
 
-`DB_Window` was a `UWindowWidget` the game's window manager opened over the hub (an OPEN DWARF BUILDS button on the
-page, until the user asked for the builds in the page itself, 2026-11-23). It is a plain `UUserWidget` now: no dim,
-no ESC hint or CLOSE button, no `Dismiss`. Its scale box shrinks it to the page (`ScaleToFit`, `DownOnly`) where
-`FitToScreen` scaled it to the viewport. Escape closes the take dialog, else goes on to the hub.
+- A top row of `BasicButton`s: the Team and Build code tabs (`PageTab`, selected), Browse builds, and the player
+  count. Past four players, a row of class filters ("All 5", "Driller 2", ...). No frame, title bar, logo or close.
+- Team: one `DB_Column` per shown player, side by side in a horizontal scroll box, scaled down to the pane's height
+  (`ScaleToFitY`, `DownOnly`). Columns are made as players show and kept. The roster chips and the four-column paging
+  of the old window are gone (`DB_Chip` deleted): the scroll box holds them all.
+- Build code: the code box (a single-line `UEditableTextBox` in the hub's style), its status, Paste from clipboard,
+  Take this build, Copy my code, Publish my build, Open in browser, and the preview column beside them. The take
+  dialog (`DB_TakeDialog`) covers the page while open; Escape closes it, else goes on to the hub.
+- `ApplyLook` (each time the hub shows the page) gives the code box the hub's text box style and takes its text colour
+  (the palette's Text) for the page's labels, which take the hub's font. Columns, the preview and the take dialog keep
+  their game icons and class colours; their panels take the hub's field style (`StyleField`), their buttons the
+  hub's flat look with the orange bars hidden (`RestyleForeign` on the button alone, so the cards' hover buttons keep
+  theirs), their labels the hub's font (`StyleColumn`). EMM's `Widget` service exports no getter for a tint
+  (`StyleOf` is not in the UeApi), hence the text box as the source of the Text colour.
+- `HubPageOpened` finds this world's `DB_Data` and opens the page every time it shows (once-a-second refresh while
+  shown); `HubPageClosed` stops it. With no `DB_Data` (not on the Space Rig or in a mission) the count line says so.
 
-Checked in drgq: job `dwarfbuilds-hub-embed` (c2306e3, EMM in the profile, solo on the Space Rig) opens the hub on
-Dwarf Builds and shoots it, closes and opens the hub and shoots again. Not checked: Mod Hub from mod.io as the host,
-and a lobby.
+The page imports EMM's classes (`BasicButton`, `IHubLook`, the `Widget` service), so it needs EMM: `DB_Mod` spawns
+`DB_Hub` only when `/Game/_ElytrasMods/Manager/Core/Services/Widget/IHubLook` loads (EMM carries Mod Hub's
+interfaces too). With Mod Hub from mod.io and no EMM there is no page. Building needs a UeApi with EMM's headers:
+ue-mods' `BpMods/UeApi`.
+
+History: until 2026-11-23 the page held an OPEN DWARF BUILDS button that opened the old `UWindowWidget` over the hub
+(the user: not wanted). Then the window sat inside the page (`feat/hub-embed`), which the user called a menu inside a
+menu (2026-11-24). This page replaces both.
+
+Queued in drgq, not run yet (2026-11-24): job `20261124-031216-dwarfbuilds-emm-page` (74fbef7, EMM in the profile,
+solo on the Space Rig) opens the hub on Dwarf Builds and shoots Team, Build code with the clipboard pasted, and Team
+again after closing and opening the hub. Built and packed only; nothing about the page is seen in game yet, nor a
+lobby.
 
 `ModHub.h` declares the interfaces with `UE_COOKED`. Without it AssetGen cooked them, since a header in the mod's
 own folder counts as the mod's, and every build until now shipped its own `/Game/_ModHub/IHub*.uasset` stubs. Those

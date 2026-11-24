@@ -8,6 +8,10 @@
 #include "UeApi/UMG.h"
 
 #include "ModHub.h"
+// Elytras Mod Manager's hub look and buttons, which the page is made of. Imported, never cooked: EMM's pak has them.
+#include "UeApi/Game/IHubLook.h"
+#include "UeApi/Game/UBasicButton.h"
+#include "UeApi/Game/UWidget.h"
 
 class DB_Settings;
 class DB_Data;
@@ -21,7 +25,6 @@ class DB_BuildShare_v2;
 }   // namespace Net
 namespace UI {
 class DB_Tip;
-class DB_HubPage;
 class DB_UpgCell;
 class DB_GearRow;
 class DB_PerkTile;
@@ -30,7 +33,6 @@ class DB_TakeDialog;
 class DB_Window;
 class DB_Column;
 class DB_Select;
-class DB_Chip;
 class DB_SlotBtn;
 }   // namespace UI
 
@@ -47,7 +49,6 @@ using namespace UI;
 #include "Net/DB_BuildShare_v2.h"
 #include "UI/DB_Tip.h"
 #include "DB_Data.h"
-#include "UI/DB_HubPage.h"
 #include "DB_Hub.h"
 #include "DB_Mod.h"
 #include "UI/DB_UpgCell.h"
@@ -60,5 +61,4 @@ using namespace UI;
 #include "UI/DB_Select.h"
 #include "InitCave.h"
 #include "InitSpacerig.h"
-#include "UI/DB_Chip.h"
 #include "UI/DB_SlotBtn.h"
