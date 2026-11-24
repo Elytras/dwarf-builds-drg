@@ -54,12 +54,13 @@ hub's menu. The upstream release is on [mod.io](https://mod.io/g/drg/m/dwarf-bui
 
 | Key or button | What it does |
 | --- | --- |
-| Mod Hub → Dwarf Builds | The mod's page is the window: every player's builds, shown as soon as the page opens. |
-| TEAM | Everyone in the lobby, one column per player. |
-| BUILD CODE | Paste a code, preview it, take it into a loadout, copy or publish your own. |
-| BROWSE | The website in the Steam overlay. |
+| Elytras Mod Manager's hub → Dwarf Builds | The mod's page: every player's builds, shown as soon as it opens. |
+| Team | Everyone in the lobby, one column per player; past four players, filter by class. |
+| Build code | Paste a code, preview it, take it into a loadout, copy or publish your own. |
+| Browse builds | The website in the Steam overlay. |
 
-Copy a code on the website, then press PASTE FROM CLIPBOARD on the BUILD CODE tab.
+Copy a code on the website, then press Paste from clipboard on the Build code tab. This build's page is made of
+Elytras Mod Manager's widgets, so it needs EMM installed.
 
 ## Building from source
 
@@ -68,15 +69,15 @@ The mod is C++ compiled to cooked Blueprints by [AssetGen](https://github.com/El
 
 - AssetGen, built as its README says (Windows: `AssetGen.sln`, Release x64; Linux: CMake), with LLVM clang 20 on
   `PATH` and Python 3 with `pyyaml`.
-- [DRG-Blueprint-Cpp-SDK](https://github.com/Elytras/DRG-Blueprint-Cpp-SDK): the game's API as C++ headers. Use its
-  `experimental/UeApi`; the release `UeApi` lacks `UProficiencyPerkAsset`, which the perk tiles read.
+- The game's API as C++ headers with Elytras Mod Manager's (`IHubLook`, `BasicButton`, its `Widget` service), which
+  the hub page is made of: ue-mods' `BpMods/UeApi`. [DRG-Blueprint-Cpp-SDK](https://github.com/Elytras/DRG-Blueprint-Cpp-SDK)'s
+  `experimental/UeApi` has the game's but not EMM's.
 - `UnrealPak.exe` from Unreal Engine 4.27 (on `PATH` or in `UNREALPAK`) to pack the pak.
 
 ```
 git clone https://github.com/Elytras/CPP-to-blueprint-compiler.git AssetGen
-git clone https://github.com/Elytras/DRG-Blueprint-Cpp-SDK.git
 git clone <this repository> dwarf-builds-drg
-python AssetGen/tools/bpbuild.py dwarf-builds-drg/Mod DRG-Blueprint-Cpp-SDK/experimental/UeApi AssetGen/x64/Release/assetgen.exe
+python AssetGen/tools/bpbuild.py dwarf-builds-drg/Mod <ue-mods>/BpMods/UeApi AssetGen/x64/Release/assetgen.exe
 ```
 
 The pak lands in `Mod/out/DwarfBuilds_P.pak`; add it to [mint](https://github.com/trumank/mint) as a local mod.
