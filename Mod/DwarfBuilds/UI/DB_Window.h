@@ -168,6 +168,7 @@ public:
         CopyNote->Font.Size = 16;
         UHorizontalBoxSlot* PreviewFit_Slot = Cast<UHorizontalBoxSlot>(CodePage->AddChild(PreviewFit));
         PreviewFit_Slot->HorizontalAlignment = EHorizontalAlignment::HAlign_Right;
+        PreviewFit_Slot->VerticalAlignment = EVerticalAlignment::VAlign_Top;
         PreviewFit->Stretch = EStretch::ScaleToFit;
         PreviewFit->StretchDirection = EStretchDirection::DownOnly;
         PreviewFit->AddChild(Preview);

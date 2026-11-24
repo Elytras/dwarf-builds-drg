@@ -105,9 +105,14 @@ the way EMM's own pages and DescriptorViewer's are (`ue-mods/BpMods/ElytrasModMa
 
 - A top row of `BasicButton`s: the Team and Build code tabs (`PageTab`, selected), Browse builds, and the player
   count. Past four players, a row of class filters ("All 5", "Driller 2", ...). No frame, title bar, logo or close.
-- Team: one `DB_Column` per shown player, side by side in a horizontal scroll box, scaled down to the pane's height
-  (`ScaleToFitY`, `DownOnly`). Columns are made as players show and kept. The roster chips and the four-column paging
-  of the old window are gone (`DB_Chip` deleted): the scroll box holds them all.
+- Team: one card (`DB_Column`) per shown player, in a wrap box from the top of the pane, as many to a row as its width
+  holds, scrolled down past that. A card is 900 wide: the player line, the two weapons side by side, the four gear
+  boxes in one row, perks, buttons. Cards are made as players show and kept. The roster chips and the four-column
+  paging of the old window are gone (`DB_Chip` deleted).
+- No text in a card clips in the hub's font (the user, 2026-11-24: the class line, overclock names and section
+  titles were cut). The game's condensed fonts had fixed-height boxes and negative paddings tuned to them; now every
+  text row's size box is a minimum height, the negative paddings are 0, names wrap (player, class line, weapon,
+  category, overclock, gear), and the card, weapon and gear boxes are as tall as their text.
 - Build code: the code box (a single-line `UEditableTextBox` in the hub's style), its status, Paste from clipboard,
   Take this build, Copy my code, Publish my build, Open in browser, and the preview column beside them. The take
   dialog (`DB_TakeDialog`) covers the page while open; Escape closes it, else goes on to the hub.
@@ -129,11 +134,13 @@ History: until 2026-11-23 the page held an OPEN DWARF BUILDS button that opened 
 (the user: not wanted). Then the window sat inside the page (`feat/hub-embed`), which the user called a menu inside a
 menu (2026-11-24). This page replaces both.
 
-Queued in drgq, not run yet (2026-11-24): job `20261124-031216-dwarfbuilds-emm-page` (74fbef7, EMM in the profile,
-solo on the Space Rig) opens the hub on Dwarf Builds and shoots Team, Build code with the clipboard pasted, and Team
-again after closing and opening the hub. Built and packed only; nothing about the page is seen in game yet, nor a
-lobby.
-
+Seen in drgq: job `20261124-031216-dwarfbuilds-emm-page` (74fbef7) showed the page with one 418-wide card, clipped
+text, centred under an empty band. With the card fix, job `20261124-191629-dwarfbuilds-emm-card` (01bc071, solo, Space
+Rig): one 900-wide card at the top of the pane, no text cut (the class line, "Electrocuting Focus Shots" and "High
+Caliber Rounds" on two lines, "UNSTABLE OVERCLOCK" whole, "Grappling Hook" and "Armor Rig" with their descenders), the
+same after closing and opening the hub; Build code with your own code pasted shows "Valid code: SCOUT BUILD" and the
+preview card, which sat centred under a gap and is pinned to the top since. Not checked: several players in the wrap
+box, a pane narrower than a card, a lobby.
 `ModHub.h` declares the interfaces with `UE_COOKED`. Without it AssetGen cooked them, since a header in the mod's
 own folder counts as the mod's, and every build until now shipped its own `/Game/_ModHub/IHub*.uasset` stubs. Those
 could stand in for the hub's real interfaces, and made DB_Mod's "is a hub installed" check always pass.
